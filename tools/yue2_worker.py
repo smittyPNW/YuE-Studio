@@ -727,6 +727,7 @@ def steps_for(quality, req):
 
 def submit_generate(req):
     from yue2.protocol import SongRequest
+    from yue2.storage import write_json
     n = int(req.get("batch", 1)); mode = req.get("cot", "full")
     style, lyrics = req["style"].strip(), req["lyrics"].strip()
     if req.get("instrumental"):
