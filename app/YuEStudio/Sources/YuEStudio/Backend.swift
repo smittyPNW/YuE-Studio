@@ -45,19 +45,19 @@ final class Backend: ObservableObject {
         outPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             guard !data.isEmpty else { return }
-            Task { @MainActor in self?.consume(data) }
+            Task { @MainActor [weak self] in self?.consume(data) }
         }
         errPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             guard let text = String(data: data, encoding: .utf8), !text.isEmpty else { return }
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 for line in text.split(separator: "\n") where !line.contains("Warning") && !line.contains("warn") && !line.contains("Running MIL") && !line.contains("passes/s") && !line.contains("torch_dtype") && !line.contains("Fetching") && !line.contains("coremltools") && !line.contains("has not been tested") && !line.isEmpty {
                     self?.append("stderr: \(line)")
                 }
             }
         }
         p.terminationHandler = { [weak self, weak p] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self, weak p] in
                 guard let self, let p, self.process === p else { return }
                 self.workerStopped()
             }

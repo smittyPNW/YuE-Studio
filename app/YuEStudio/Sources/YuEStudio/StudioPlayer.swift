@@ -27,7 +27,7 @@ final class StudioPlayer {
 
     init() {
         tick = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.15, preferredTimescale: 600), queue: .main) { [weak self] time in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 if time.seconds.isFinite { self.position = max(0, time.seconds) }
                 if self.player.currentItem?.status == .failed { self.error = self.player.currentItem?.error?.localizedDescription ?? "Could not play this audio file."; self.playing = false }
@@ -35,7 +35,7 @@ final class StudioPlayer {
         }
         endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main) { [weak self] note in
             guard let item = note.object as? AVPlayerItem else { return }
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, item === self.player.currentItem else { return }
                 self.playing = false
                 if self.loop { self.seek(0); self.player.play(); self.playing = true }
