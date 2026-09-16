@@ -1,6 +1,9 @@
 <p align="center"><img src="custom/Assets/AppIcon.png" width="112" alt="YuE Studio’s orange tuning-fork icon"></p>
 <h1 align="center">YuE Studio</h1>
 <p align="center"><strong>A place for your songs.</strong><br>Local music creation for Apple Silicon. A native studio built around the music.</p>
+
+> **Built on the original creators’ work.** This is an independently customized edition of **[YuE Studio by Tony Weston](https://github.com/tonywestonuk/YuE-Studio)**, whose native Mac app and Apple Silicon inference work provide its foundation. The music-generation model is **[YuE2 by M·A·P and collaborators](https://github.com/multimodal-art-projection/YuE)**. Our additions focus on the studio interface, workflow, and optional ReSoul integration. **[Full credits and provenance →](CREDITS.md)**
+
 <p align="center">
 <a href="https://github.com/smittyPNW/YuE-Studio/actions/workflows/public-checks.yml"><img src="https://github.com/smittyPNW/YuE-Studio/actions/workflows/public-checks.yml/badge.svg" alt="Public checks"></a>
 <img src="https://img.shields.io/badge/macOS-14%2B-C34A12?logo=apple&logoColor=white" alt="macOS 14 or newer">
