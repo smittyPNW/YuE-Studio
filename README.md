@@ -22,9 +22,10 @@
 **Start with an idea or a hook.** The optional [YuE2 Songwriter companion](docs/SONGWRITER.md) helps an AI assistant write complete lyrics and a matching musical direction for Studio. It includes source-backed guidance on [key, time signature, BPM, solos and instrumental breaks](skills/yue2-songwriter/references/composition-controls.md), with clear distinctions between text requests and score controls.
 
 - **Write with structure.** Separate musical direction from lyrics; jump between verse, chorus, bridge, and other section markers.
-- **Keep the full render.** New songs use 32-step synthesis and full composition planning. The interface does not trade quality for speed.
+- **Keep the full render.** Full quality is the default: 32-step synthesis and full composition planning. Draft is a separate, explicitly selected preview mode.
 - **Listen and keep versions.** A persistent player, waveform, favorites, and a song library keep your work close. Existing drafts can be compared with full renders.
 - **Recover useful work.** Saved generation artifacts support recovery and full-quality rerendering. Failed jobs remain visible rather than disappearing.
+- **Preview, then finish.** Full quality stays the default. Choose an 8-step Draft preview, then finish its saved composition with all 32 steps. Clear either prompt field with an Undo clear safeguard. [Render modes and measured limits](docs/RENDER-MODES.md).
 - **Edit the recording.** A third workspace adds sample-level selection, cutting and arrangement, fades, crossfades, gain ramps, repair and channel tools, markers, frequency analysis, and persistent undo/redo. Open external recordings or send a generated song directly to Edit. [Editing guide](docs/AUDIO-EDITING.md).
 - **Finish optionally.** Send a finished song to Master—or import a separate recording without generating anything.
 - **One heavy job at a time.** Generation, editor processing, and mastering share an admission gate and file lock. The generation worker exits before mastering begins.

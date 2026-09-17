@@ -45,5 +45,21 @@ class SubmissionTests(unittest.TestCase):
             self.assertEqual(sum(c.kwargs.get('event') == 'started' for c in emit.call_args_list), 2)
             self.assertIsNone(worker.PIPE)
 
+    def test_draft_is_explicit_and_keeps_full_planning(self):
+        request = dict(cmd='generate', title='Preview', style='Atmospheric rock',
+                       lyrics='[Verse]\nThe hidden light', cot='full', seed=42,
+                       random_seed=False, batch=1, max_tokens=7500, engine='mlx')
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(worker, 'OUTPUT_DIR', Path(temporary)), \
+             patch.object(worker, 'PIPELINE', worker.Pipeline()), \
+             patch.object(worker, 'emit'):
+            worker.submit_generate(request)
+            worker.submit_generate(dict(request, quality='draft', draft_steps=8))
+            full, draft = worker.PIPELINE.jobs.snapshot()
+            self.assertEqual((full.items[0].quality, full.items[0].steps), ('full', 32))
+            self.assertEqual((draft.items[0].quality, draft.items[0].steps), ('draft', 8))
+            self.assertEqual(full.items[0].request.to_dict(), draft.items[0].request.to_dict())
+            self.assertEqual(draft.req['max_tokens'], full.req['max_tokens'])
+
 if __name__ == '__main__':
     unittest.main()

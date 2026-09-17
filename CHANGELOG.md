@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1 — Preview, then finish
+
+- Added an explicit Full quality / Draft preview selector. Full remains the default; Draft uses 8 synthesis steps with the same model precision, full composition planning, duration ceiling and lossless stereo output.
+- Finish a saved draft with the original 32-step synthesis without repeating score planning or song-token generation. The draft and prior render metadata are retained.
+- Installed models load locally first, avoiding repeated network checks. Missing files retain the normal download fallback; integrity errors remain visible.
+- Render workers now request user-initiated scheduling. An activity assertion prevents App Nap and automatic system sleep while generation is queued or active, and is released on idle or failure. Display sleep and explicit Sleep remain under user control.
+- Model loading now appears in generation progress. Active drafts are labeled from the submitted job; prompt edits do not change a queued job.
+- Style and Lyrics each have Clear and Undo clear controls. Existing libraries migrate with Full quality selected; new compositions also default to Full.
+- See [render modes and performance](docs/RENDER-MODES.md) for measurements and limits.
+
 ## 0.5.0 — Edit the recording
 
 - Added a native Edit workspace between Create and Master with detailed stereo waveforms, exact sample/second selections, selection looping, arrangement clips, markers and saved projects.

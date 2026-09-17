@@ -33,7 +33,7 @@ The tests establish behavior, format and measured headroom, not a guarantee that
 
 ## Preserved generation quality
 
-New generation still requests full composition planning, GPU MLX, 32 synthesis steps and lossless output. This release does not change model precision or generation DSP. The earlier full-quality generation comparison used the complete 218.36-second reference recording and found identical FLAC and latent bytes with the custom worker. No fresh model generation was required for this UI/mastering release, and the full upstream model suite/fresh multi-GB runtime install were not rerun.
+Full-quality generation requests full composition planning, GPU MLX, 32 synthesis steps and lossless output. This release does not change model precision or generation DSP. The earlier full-quality generation comparison used the complete 218.36-second reference recording and found identical FLAC and latent bytes with the custom worker. No fresh model generation was required for this UI/mastering release, and the full upstream model suite/fresh multi-GB runtime install were not rerun.
 
 ## Publication boundary
 
@@ -60,3 +60,12 @@ Local verification on Apple Silicon, 2026-09-17:
 Run ordinary checks with `swift test --package-path app/YuEStudio`. To include an owned existing recording, set `YUE_EDITOR_TEST_AUDIO` to its path. To write native-view snapshots, also set `YUE_EDITOR_SNAPSHOT_DIR` to a local output directory. Audio and local paths are not committed.
 
 Release 0.5.0 installer: Developer ID signing, app and DMG notarization/stapling, mounted-app signature checks, helper catalog execution, DMG verification and Gatekeeper assessments all passed. SHA-256: `ffb3baa32630b376deb70316ee53b8bcd34710780f2c849cb78ab450af18e95d`.
+
+
+## Draft preview and rendering workflow — 0.5.1
+
+- 39 Swift tests passed, including the optional real-recording and native-view fixtures; 17 Python tests passed. Migration keeps old workspaces at Full quality. Clear/Undo preserves Unicode, protects newly typed replacement text and does not carry a restore action into another composition.
+- Worker admission tests confirm that Draft changes synthesis steps (8 versus 32), while the plan request, seed, lyrics, style and duration ceiling remain equal. Missing quality defaults to Full.
+- An actual 12-second saved-token render compared the prior worker against Draft upgraded to Full. Final FLAC and latent files were byte-identical, the draft remained intact, and every original source hash matched. A follow-up Full render through the local-cache-first loading path produced the same bytes. See [measured timings](RENDER-MODES.md).
+- Cache-hit, missing-file fallback and non-retry of corruption/error paths are covered without changing inference settings. Backend event tests cover the rendering activity assertion across queue admission, failure and idle.
+- Light and dark Create snapshots use the production SwiftUI views in an isolated fixture library, including the Draft selector with the settings panel open. They are interface snapshots rather than a claim of a complete native accessibility interaction audit.

@@ -10,6 +10,12 @@ struct SongDraft: Codable, Equatable {
     var randomSeed = true
     var instrumental = false
     var abc = ""
+    // Optional for compatibility with saved workspaces from before the quality picker.
+    var renderQuality: GenerationQuality? = nil
+    var quality: GenerationQuality {
+        get { renderQuality ?? .full }
+        set { renderQuality = newValue }
+    }
 }
 
 struct SongNotes: Codable {
@@ -38,15 +44,36 @@ final class StudioLibrary {
     var error: String?
     var notice: String?
     var saveTask: Task<Void,Never>?
-    private let file = Paths.custom.appendingPathComponent("library.json")
+    private var clearedPrompts: [ClearedPrompt] = []
+    private let file: URL
 
-    init() {
+    init(file: URL = Paths.custom.appendingPathComponent("library.json")) {
+        self.file = file
         state = (try? JSONDecoder().decode(LibraryState.self, from: Data(contentsOf: file))) ?? LibraryState()
+    }
+    func promptText(_ field: PromptField) -> String { field == .style ? state.composer.style : state.composer.lyrics }
+    func canRestore(_ field: PromptField) -> Bool {
+        promptText(field).isEmpty && clearedPrompts.contains { $0.field == field && $0.songID == state.selected }
+    }
+    func clearPrompt(_ field: PromptField) {
+        let text = promptText(field)
+        guard !text.isEmpty else { return }
+        clearedPrompts.removeAll { $0.field == field }
+        clearedPrompts.append(ClearedPrompt(field: field, text: text, songID: state.selected))
+        if field == .style { state.composer.style = "" } else { state.composer.lyrics = "" }
+        changed()
+    }
+    func restorePrompt(_ field: PromptField) {
+        guard canRestore(field), let saved = clearedPrompts.first(where: { $0.field == field }) else { return }
+        if field == .style { state.composer.style = saved.text } else { state.composer.lyrics = saved.text }
+        clearedPrompts.removeAll { $0.field == field }
+        changed()
     }
     var valid: Bool { !state.composer.style.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (state.composer.instrumental || !state.composer.lyrics.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
     var wordCount: Int { state.composer.lyrics.split(whereSeparator: { $0.isWhitespace }).count }
     var sections: [String] { state.composer.lyrics.components(separatedBy: .newlines).filter { $0.hasPrefix("[") && $0.hasSuffix("]") } }
     func changed() {
+        clearedPrompts.removeAll { !promptText($0.field).isEmpty || $0.songID != state.selected }
         if let key = state.selected {
             state.drafts[key] = state.composer
             state.notes[key] = SongNotes(title: state.composer.title, favorite: state.notes[key]?.favorite ?? false)
@@ -55,7 +82,7 @@ final class StudioLibrary {
         saveTask = Task { try? await Task.sleep(for: .milliseconds(350)); if !Task.isCancelled { save() } }
     }
     func save() {
-        do { try FileManager.default.createDirectory(at: Paths.custom, withIntermediateDirectories: true); try JSONEncoder().encode(state).write(to: file, options: .atomic) }
+        do { try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true); try JSONEncoder().encode(state).write(to: file, options: .atomic) }
         catch { self.error = "Could not save your workspace: \(error.localizedDescription)" }
     }
     func title(_ song: Song) -> String { state.notes[song.id]?.title ?? "Song \(song.index)" }
@@ -77,6 +104,7 @@ final class StudioLibrary {
         save()
     }
     func select(_ song: Song) {
+        clearedPrompts.removeAll()
         changed(); saveTask?.cancel(); save()
         state.selected = song.id
         if let draft = state.drafts[song.id] { state.composer = draft }
@@ -84,10 +112,13 @@ final class StudioLibrary {
             var request = readJSON(song.directory.appendingPathComponent("request.json"))
             if request.isEmpty { request = readJSON(song.directory.appendingPathComponent("studio-job.json")) }
             state.composer = SongDraft(title: title(song), style: request["style"] as? String ?? "", lyrics: request["lyrics"] as? String ?? "", maxSeconds: 300, seed: request["seed"] as? Int ?? song.seed, randomSeed: true, instrumental: request["instrumental"] as? Bool ?? false)
+            let job = readJSON(song.directory.appendingPathComponent("studio-job.json"))
+            state.composer.quality = GenerationQuality(rawValue: job["quality"] as? String ?? "full") ?? .full
         }
         save()
     }
     func newSong() {
+        clearedPrompts.removeAll()
         changed(); saveTask?.cancel(); save()
         state.selected = nil; state.composer = SongDraft(); save()
     }

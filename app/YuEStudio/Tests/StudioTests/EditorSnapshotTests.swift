@@ -24,15 +24,23 @@ final class EditorSnapshotTests: XCTestCase {
         model.statistics = try EditAudio.analyze(source); model.fit(); model.selectionStart = 0; model.selectionEnd = 0
         model.status = "Open recording · saved. Original preserved."
         model.items = [EditLibraryItem(folder: temporary, title: "Tool Me Fool Me")]
-        let backend = Backend(), library = StudioLibrary(), player = StudioPlayer(), mastering = MasteringController()
+        let fixtureLibrary = temporary.appendingPathComponent("library.json")
+        try? FileManager.default.copyItem(at: Paths.custom.appendingPathComponent("library.json"), to: fixtureLibrary)
+        let backend = Backend(), library = StudioLibrary(file: fixtureLibrary), player = StudioPlayer(), mastering = MasteringController()
+        defer { library.saveTask?.cancel() }
         backend.rescan(); library.register(backend.songs)
+        backend.connected = true // Fixture state; startServices:false prevents a worker launch.
+        if let song = backend.songs.first(where: { $0.status == .ready && library.state.notes[$0.id]?.favorite == true }) ?? backend.songs.first(where: { $0.status == .ready }) {
+            library.select(song)
+        }
         editorDefaults: do {
             let oldMode = UserDefaults.standard.object(forKey: "workspace"), oldAppearance = UserDefaults.standard.object(forKey: "appearance")
             defer {
                 UserDefaults.standard.set(oldMode, forKey: "workspace"); UserDefaults.standard.set(oldAppearance, forKey: "appearance")
             }
-            for (mode, dark) in [("edit", true), ("edit", false), ("create", true), ("master", false)] {
+            for (mode, dark) in [("edit", true), ("edit", false), ("create", true), ("create", false), ("master", false)] {
             UserDefaults.standard.set(mode, forKey: "workspace"); UserDefaults.standard.set(dark ? "dark" : "light", forKey: "appearance")
+            if mode == "create" { library.state.composer.quality = dark ? .full : .draft; library.showInspector = !dark }
             if mode == "create", let song = backend.songs.first(where: { $0.id == library.state.selected }) { player.load(song, title: library.title(song)) }
             if mode == "master" { mastering.audition() }
             let content = StudioRoot(library: library, player: player, mastering: mastering, editor: model, startServices: false)

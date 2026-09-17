@@ -25,7 +25,7 @@ Events:   {"event": "ready"}   {"event": "log", "message"}   {"event": "pong"}  
           {"event": "failed", "path", "message"}   {"event": "idle"}   (every queued song finished or was cancelled)
 """
 import collections, datetime as dt, json, os, sys, threading, time, traceback
-from studio_support import recoverable_ane_error, acquire_worker_lock, persist_state, save_render, song_directory
+from studio_support import recoverable_ane_error, acquire_worker_lock, persist_state, save_render, song_directory, cached_pipeline
 from pathlib import Path
 os.environ.setdefault("TQDM_DISABLE", "1")          # coremltools progress bars would otherwise flood the app log
 import warnings
@@ -66,6 +66,7 @@ def pipeline():
     if PIPE is None:
         import torch
         from yue2 import YuE2Pipeline
+        from huggingface_hub.errors import LocalEntryNotFoundError
         device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
         log(f"Loading YuE2 model on {device} (first run only)")
         t0 = time.perf_counter()
@@ -74,8 +75,11 @@ def pipeline():
         lean = device == "mps" and os.environ.get("YUE2_LEAN", "1") != "0"
         # The VAE decodes in tiles; smaller tiles halve its activation peak (about 3.6 GB at 1024
         # frames) on machines where the whole memory is shared with the model.
-        PIPE = YuE2Pipeline.from_pretrained("m-a-p/YuE2-3B", device=device, progress=False, lean=lean,
-                                            vae_core_frames=1024 if PHYSICAL_GIB >= 24 else 512)
+        PIPE = cached_pipeline(YuE2Pipeline.from_pretrained, "m-a-p/YuE2-3B",
+                               cache_miss_errors=(FileNotFoundError, LocalEntryNotFoundError),
+                               on_download=lambda: log("Model files are missing locally; downloading the required files"),
+                               device=device, progress=False, lean=lean,
+                               vae_core_frames=1024 if PHYSICAL_GIB >= 24 else 512)
         log(f"Physical memory {PHYSICAL_GIB:.0f} GB: {'lean' if lean else 'full'} model, VAE tile {PIPE.vae_core_frames} frames, "
             f"stages {'overlap' if CONCURRENT else 'run one at a time'}")
         PIPE._load_model()
@@ -343,6 +347,8 @@ def run_tokens(job, items):
     from yue2.pipeline import SymbolicPlan
     from yue2.protocol import CODEC_OFFSET, token_prefixes
     req = job.req
+    for it in items:
+        it.set_stage("planning", "loading the music model")
     pipe, model = acquire_model()
     tokenizer = pipe.tokenizer
     n = len(items); mode = req.get("cot", "full"); engine = req.get("engine", "auto")
@@ -735,7 +741,7 @@ def submit_generate(req):
         style, lyrics = instrumental_tags(style), structure_only(lyrics)
         if mode == "off":
             mode = "full"                      # the vocal voice can only be silenced in a planned score
-    quality = "draft" if req.get("quality", "draft") == "draft" else "full"
+    quality = "draft" if req.get("quality", "full") == "draft" else "full"
     base = int(time.time()) % 10_000_000 if req.get("random_seed") else int(req.get("seed", 831001))
     seeds = [base + i for i in range(n)]
     abc = (req.get("abc") or "").strip() or None
@@ -758,7 +764,7 @@ def submit_generate(req):
         write_json(it.directory / "studio-job.json", req)
         write_json(it.directory / "studio.json", {"title": req.get("title", "Untitled song"), "created": dt.datetime.now().isoformat()})
     PIPELINE.add(items)
-    emit(event="started", job=stamp, output=str(out_root), songs=[{"index": it.index, "seed": it.seed, "path": it.path} for it in items])
+    emit(event="started", job=stamp, output=str(out_root), songs=[{"index": it.index, "seed": it.seed, "path": it.path, "quality": it.quality} for it in items])
     for it in items:
         it.set_stage("queued", "waiting for the GPU")
     log(f"Queued {stamp}: {n} song(s), {quality} quality ({steps} steps), seeds {seeds}" + (", instrumental" if req.get("instrumental") else ""))
@@ -785,11 +791,12 @@ def submit_render(req):
     index = int(directory.name[4:]) if directory.name.startswith("song") and directory.name[4:].isdigit() else 1
     item = Item(None, index, plan.request.seed, plan.request, directory, quality, steps_for(quality, req), req.get("engine", "auto"))
     item.plan, item.codec, item.truncated = plan, codec, truncated
-    item.semantic_timing = previous.get("timing", {}) if "tokens.json" in previous else {}
+    timing = previous.get("timing") or {}
+    item.semantic_timing = timing.get("semantic", {}) if (directory / "result.json").exists() else timing
     with MODEL_LOCK:
         item.engine = choose_engine(item.engine, pipeline(), len(codec), quality)
     PIPELINE.add([item])
-    emit(event="started", job=directory.parent.name, output=str(directory.parent), songs=[{"index": index, "seed": item.seed, "path": item.path}])
+    emit(event="started", job=directory.parent.name, output=str(directory.parent), songs=[{"index": index, "seed": item.seed, "path": item.path, "quality": item.quality}])
     log(f"Queued {item.label} for {quality} synthesis ({item.steps} steps, engine {item.engine}): about {len(codec) / 25:.0f} s of audio")
     item.set_stage("synth", "waiting", engine=item.engine)
     PIPELINE.synth.put(item)

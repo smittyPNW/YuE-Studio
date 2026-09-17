@@ -17,6 +17,7 @@ final class Backend: ObservableObject {
     private var pendingRender: String?
     @Published var memoryPressure = "Monitoring"
     private var memoryMonitor: DispatchSourceMemoryPressure?
+    let renderActivity = RenderActivity()
 
     init() {
         let monitor = DispatchSource.makeMemoryPressureSource(eventMask: [.normal, .warning, .critical], queue: .main)
@@ -39,6 +40,7 @@ final class Backend: ObservableObject {
         p.executableURL = Paths.python
         p.arguments = ["-u", Paths.worker.path]
         p.currentDirectoryURL = Paths.support
+        p.qualityOfService = .userInitiated
         p.environment = Paths.workerEnvironment
         let inPipe = Pipe(), outPipe = Pipe(), errPipe = Pipe()
         p.standardInput = inPipe; p.standardOutput = outPipe; p.standardError = errPipe
@@ -71,7 +73,7 @@ final class Backend: ObservableObject {
         }
     }
 
-    private func consume(_ data: Data) {
+    func consume(_ data: Data) {
         buffer.append(data)
         while let range = buffer.range(of: Data([0x0A])) {
             let line = buffer.subdata(in: buffer.startIndex..<range.lowerBound)
@@ -97,9 +99,10 @@ final class Backend: ObservableObject {
                     let path = entry["path"] as? String ?? ""
                     if let i = songs.firstIndex(where: { $0.path == path }) {
                         songs[i].status = .queued; songs[i].detail = "queued"; songs[i].fraction = nil
+                        songs[i].quality = entry["quality"] as? String ?? "full"
                     } else {
                         songs.append(Song(run: run, index: entry["index"] as? Int ?? 0, path: path, score: "", seconds: 0,
-                                          seed: entry["seed"] as? Int ?? 0, truncated: false, status: .queued, detail: "queued"))
+                                          seed: entry["seed"] as? Int ?? 0, truncated: false, status: .queued, quality: entry["quality"] as? String ?? "full", detail: "queued"))
                     }
                 }
                 sortSongs(); updateBusy()
@@ -170,7 +173,10 @@ final class Backend: ObservableObject {
         if log.count > 2000 { log.removeFirst(log.count - 2000) }
     }
 
-    private func updateBusy() { busy = generationReserved || pendingGenerations > 0 || songs.contains { $0.inFlight } }
+    private func updateBusy() {
+        busy = generationReserved || pendingGenerations > 0 || songs.contains { $0.inFlight }
+        renderActivity.setActive(busy)
+    }
 
     /// Newest run first, songs in order within a run.
     private func sortSongs() {
@@ -204,7 +210,7 @@ final class Backend: ObservableObject {
         guard !masteringActive, connected else { lastError = "Finish the current editing or mastering job before starting music generation."; return }
         generationReserved = true; pendingGenerations += 1; updateBusy()
         send(["cmd": "generate", "title": title, "style": style, "lyrics": lyrics, "cot": cot, "seed": seed, "random_seed": randomSeed,
-              "batch": batch, "max_tokens": maxTokens, "engine": engine, "abc": abc, "quality": quality, "instrumental": instrumental])
+              "batch": batch, "max_tokens": maxTokens, "engine": engine, "abc": abc, "quality": quality, "draft_steps": 8, "instrumental": instrumental])
     }
 
     /// Synthesize a song from its saved tokens: a full-quality render of a draft, or a stalled song.

@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct StudioInspector: View {
+@MainActor struct StudioInspector: View {
     @Bindable var library: StudioLibrary
     @EnvironmentObject var backend: Backend
     var body: some View {
@@ -16,10 +16,14 @@ struct StudioInspector: View {
                 Divider()
                 VStack(alignment: .leading, spacing: 9) {
                     Text("QUALITY").font(.caption).tracking(1).foregroundStyle(.secondary)
-                    Label("Full · 32 synthesis steps", systemImage: "checkmark.seal")
+                    Picker("Render quality", selection: $library.state.composer.quality) {
+                        ForEach(GenerationQuality.allCases) { quality in Text(quality.title).tag(quality) }
+                    }.labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
+                    Label("\(library.state.composer.quality.steps) synthesis steps", systemImage: library.state.composer.quality == .full ? "checkmark.seal" : "bolt")
                     Label("GPU · Apple MLX", systemImage: "cpu")
                     Label("48 kHz lossless stereo", systemImage: "waveform")
-                    Text("Original model precision and full musical planning. One song per job.").font(.caption).foregroundStyle(.secondary)
+                    Text(library.state.composer.quality.explanation).font(.caption).foregroundStyle(.secondary)
+                    Text("Original model precision in both modes. One song per job. Studio prevents automatic system sleep while rendering.").font(.caption).foregroundStyle(.secondary)
                 }.font(.subheadline)
                 Divider()
                 VStack(alignment: .leading, spacing: 10) {

@@ -8,6 +8,19 @@ import shutil
 import uuid
 
 
+def cached_pipeline(factory, model, *, cache_miss_errors, on_download, **kwargs):
+    """Use installed weights immediately; only missing cache files trigger a download.
+
+    Corrupt weights and other runtime errors must remain visible, not cause a
+    silent retry or a change of inference settings.
+    """
+    try:
+        return factory(model, local_files_only=True, **kwargs)
+    except cache_miss_errors:
+        on_download()
+        return factory(model, local_files_only=False, **kwargs)
+
+
 def recoverable_ane_error(error):
     text = str(error)
     return text.startswith('compile') or (text.startswith('evaluate:') and

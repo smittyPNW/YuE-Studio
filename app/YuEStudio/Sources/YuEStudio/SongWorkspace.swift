@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SongWorkspace: View {
+@MainActor struct SongWorkspace: View {
     @Bindable var library: StudioLibrary
     @Bindable var player: StudioPlayer
     @EnvironmentObject var backend: Backend
@@ -27,7 +27,12 @@ struct SongWorkspace: View {
                 }
             }
             VStack(alignment: .leading, spacing: 8) {
-                HStack { Text("Musical direction").font(.headline); Spacer(); Text("Genre · voice · instruments · mood").font(.caption).foregroundStyle(.secondary) }
+                HStack {
+                    Text("Musical direction").font(.headline)
+                    Spacer()
+                    Text("Genre · voice · instruments · mood").font(.caption).foregroundStyle(.secondary)
+                    PromptClearButton(library: library, field: .style)
+                }
                 TextEditor(text: $library.state.composer.style).font(.body).scrollContentBackground(.hidden).padding(10).frame(height: 96)
                     .background(StudioTheme.editor, in: .rect(cornerRadius: 10)).accessibilityLabel("Musical style prompt")
             }
@@ -36,6 +41,7 @@ struct SongWorkspace: View {
                     Text(library.state.composer.instrumental ? "Arrangement" : "Lyrics").font(.headline)
                     Spacer()
                     Text("\(library.wordCount) words").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                    PromptClearButton(library: library, field: .lyrics)
                     if let song, !song.score.isEmpty { Button("Score", systemImage: "music.note.list") { library.showScore = true }.buttonStyle(.plain).font(.caption) }
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -59,11 +65,17 @@ struct SongWorkspace: View {
                     .font(.callout).foregroundStyle(.orange)
             }
             RenderStatusView(song: song, backend: backend, player: player)
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Label("Full quality", systemImage: "checkmark.seal").font(.subheadline).fontWeight(.medium)
-                    Text("32 steps · full composition · lossless stereo").font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 7) {
+                HStack {
+                    Picker("Render quality", selection: $library.state.composer.quality) {
+                        ForEach(GenerationQuality.allCases) { quality in Text(quality.title).tag(quality) }
+                    }.pickerStyle(.segmented).labelsHidden().frame(width: 250)
+                    Spacer(minLength: 0)
                 }
+                Text(library.state.composer.quality.explanation)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 12) {
                 Spacer()
                 if let song, song.status == .ready, let editSong {
                     Button("Edit", systemImage: "waveform.path") { player.pause(); editSong(song) }.disabled(backend.busy || backend.masteringActive)
@@ -75,8 +87,8 @@ struct SongWorkspace: View {
                 Button {
                     library.save()
                     let d = library.state.composer
-                    backend.generate(title: d.title.trimmingCharacters(in: .whitespaces).isEmpty ? "Untitled song" : d.title, style: d.style, lyrics: d.lyrics, cot: "full", seed: d.seed, randomSeed: d.randomSeed, batch: 1, maxTokens: Int(d.maxSeconds * 25), engine: "mlx", abc: d.abc, quality: "full", instrumental: d.instrumental)
-                } label: { Label(backend.busy ? "Add to queue" : (song == nil ? "Generate song" : "Create new version"), systemImage: backend.busy ? "plus" : "waveform") }
+                    backend.generate(title: d.title.trimmingCharacters(in: .whitespaces).isEmpty ? "Untitled song" : d.title, style: d.style, lyrics: d.lyrics, cot: "full", seed: d.seed, randomSeed: d.randomSeed, batch: 1, maxTokens: Int(d.maxSeconds * 25), engine: "mlx", abc: d.abc, quality: d.quality.rawValue, instrumental: d.instrumental)
+                } label: { Label(backend.busy ? "Add to queue" : (library.state.composer.quality == .draft ? "Generate draft" : (song == nil ? "Generate song" : "Create new version")), systemImage: backend.busy ? "plus" : "waveform") }
                 .buttonStyle(StudioPrimaryButtonStyle()).disabled(!library.valid || !backend.connected || backend.masteringActive)
                 .keyboardShortcut(.return, modifiers: .command)
             }
@@ -84,14 +96,14 @@ struct SongWorkspace: View {
     }
 }
 
-struct RenderStatusView: View {
+@MainActor struct RenderStatusView: View {
     let song: Song?
     @ObservedObject var backend: Backend
     @Bindable var player: StudioPlayer
     var body: some View {
         if let song, song.inFlight {
             VStack(alignment: .leading, spacing: 9) {
-                HStack { Text(stageName(song)).font(.headline); Spacer(); Button("Cancel this render") { backend.cancel(song) }.controlSize(.small) }
+                HStack { Text(song.quality == "draft" ? "Draft · \(stageName(song))" : stageName(song)).font(.headline); Spacer(); Button("Cancel this render") { backend.cancel(song) }.controlSize(.small) }
                 ProgressView(value: song.trackProgress, total: 4).tint(StudioTheme.accent)
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     HStack {
@@ -111,14 +123,20 @@ struct RenderStatusView: View {
                 Label("Your song needs attention", systemImage: "exclamationmark.circle").font(.headline)
                 Text(song.detail).font(.caption).foregroundStyle(.secondary).lineLimit(3).textSelection(.enabled)
                 if FileManager.default.fileExists(atPath: song.directory.appendingPathComponent("semantic.npy").path) {
-                    Button("Recover with full-quality GPU render", systemImage: "arrow.clockwise") { player.invalidate(song.id); backend.render(song, engine: "mlx", quality: "full") }.disabled(!backend.connected)
+                    Button("Recover with full-quality GPU render", systemImage: "arrow.clockwise") { player.invalidate(song.id); backend.render(song, engine: "mlx", quality: "full") }.disabled(!backend.connected || backend.masteringActive)
                 }
             }.padding(14).background(StudioTheme.accent.opacity(0.08), in: .rect(cornerRadius: 10))
         } else if let song, song.quality == "draft" {
             HStack {
-                Text("This is a draft preview.").font(.subheadline).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Draft preview · 8 synthesis steps").font(.subheadline)
+                    Text("Finish this saved composition with 32 steps. Planning and tokens are reused; the draft is kept.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Spacer()
-                Button("Render full quality", systemImage: "waveform") { player.invalidate(song.id); backend.render(song, engine: "mlx", quality: "full") }.disabled(!backend.connected)
+                Button("Finish at full quality", systemImage: "waveform") { player.pause(); player.invalidate(song.id); backend.render(song, engine: "mlx", quality: "full") }
+                    .disabled(!backend.connected || backend.masteringActive)
+                    .help("Uses this song's saved score, tokens and seed, not the edited prompt fields.")
             }
         } else if backend.masteringActive {
             Label("Mastering is using the audio engine. Generation will be available when it finishes.", systemImage: "hourglass").font(.callout).foregroundStyle(.secondary)

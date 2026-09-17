@@ -3,8 +3,9 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools'))
-from studio_support import recoverable_ane_error, acquire_worker_lock, persist_state, save_render, song_directory
+from studio_support import recoverable_ane_error, acquire_worker_lock, persist_state, save_render, song_directory, cached_pipeline
 
 class FakeSong:
     def __init__(self, fail=False): self.fail=fail
@@ -15,6 +16,22 @@ class FakeSong:
         return {'status':'complete','identity':'test'}
 
 class StudioTests(unittest.TestCase):
+    def test_cached_model_avoids_network_and_only_missing_files_retry(self):
+        settings = dict(device='mps', lean=True, vae_core_frames=1024, progress=False)
+        ready = object()
+        factory, download = Mock(return_value=ready), Mock()
+        def load():
+            return cached_pipeline(factory, 'model', cache_miss_errors=(FileNotFoundError,), on_download=download, **settings)
+        self.assertIs(load(), ready)
+        factory.assert_called_once_with('model', local_files_only=True, **settings)
+        download.assert_not_called()
+        factory.reset_mock(); factory.side_effect = [FileNotFoundError('missing shard'), ready]
+        self.assertIs(load(), ready)
+        self.assertEqual([call.kwargs['local_files_only'] for call in factory.call_args_list], [True, False])
+        download.assert_called_once()
+        factory.reset_mock(); download.reset_mock(); factory.side_effect = ValueError('invalid weight manifest')
+        with self.assertRaises(ValueError): load()
+        self.assertEqual(factory.call_count, 1); download.assert_not_called()
     def test_error_classification_does_not_hide_unrelated_errors(self):
         self.assertTrue(recoverable_ane_error(RuntimeError('compile: refused')))
         self.assertTrue(recoverable_ane_error(RuntimeError('evaluate: Error Domain=com.apple.appleneuralengine Code=8')))
