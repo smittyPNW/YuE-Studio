@@ -57,7 +57,7 @@ final class Backend: ObservableObject {
             }
         }
         p.terminationHandler = { [weak self, weak p] _ in
-            Task { @MainActor [weak self] in
+            Task { @MainActor [weak self, weak p] in
                 guard let self, let p, self.process === p else { return }
                 self.workerStopped()
             }
