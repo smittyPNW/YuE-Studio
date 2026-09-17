@@ -17,7 +17,7 @@
 - Before/After and saved-version changes preserve playback position and transport intent, apply level matching before playback resumes, and reject missing files instead of continuing the wrong track.
 - Verified with 19 Swift tests, 15 Python tests, a complete existing-song mastering pass, and installed-app exports. No songs were generated. See [verification](docs/VERIFICATION.md#audio-delivery-update-041).
 
-The latest MP3 build is installed and ad-hoc signed locally. The preceding Developer ID signed build is retained as a backup. A new public DMG has not been notarized or published; the download links still point to 0.4.0.
+The 0.4.1 development build was ad-hoc signed locally; it was superseded by the signed and notarized 0.5.0 release above.
 
 ## 0.4.0 — Community mastering
 
