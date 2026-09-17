@@ -3,11 +3,12 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  interface:
+  community:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/check-public-tree.py
+      - run: brew install cmake ninja
+      - run: bash custom/package-local.sh
       - run: python3 -m unittest discover -s custom/Tests -v
       - run: swift test --package-path app/YuEStudio
-      - run: bash custom/package-local.sh

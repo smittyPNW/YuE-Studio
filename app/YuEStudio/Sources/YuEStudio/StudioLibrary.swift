@@ -17,6 +17,8 @@ struct SongNotes: Codable {
     var favorite = false
 }
 
+struct SongRecovery: Codable { var note: SongNotes?; var draft: SongDraft? }
+
 struct LibraryState: Codable {
     var composer = SongDraft()
     var selected: String?
@@ -60,6 +62,12 @@ final class StudioLibrary {
     func favorite(_ song: Song) { var note = state.notes[song.id] ?? SongNotes(title: title(song)); note.favorite.toggle(); state.notes[song.id] = note; save() }
     func register(_ songs: [Song]) {
         for song in songs where state.notes[song.id] == nil {
+            if let data = try? Data(contentsOf: song.directory.appendingPathComponent("studio-recovery.json")),
+               let recovery = try? JSONDecoder().decode(SongRecovery.self, from: data) {
+                state.notes[song.id] = recovery.note
+                state.drafts[song.id] = recovery.draft
+                if recovery.note != nil { continue }
+            }
             let json = readJSON(song.directory.appendingPathComponent("studio.json"))
             let request = readJSON(song.directory.appendingPathComponent("request.json"))
             let lyric = request["lyrics"] as? String ?? ""
@@ -83,6 +91,24 @@ final class StudioLibrary {
         changed(); saveTask?.cancel(); save()
         state.selected = nil; state.composer = SongDraft(); save()
     }
+    func moveToTrash(_ song: Song, backend: Backend, player: StudioPlayer) {
+        guard !backend.busy, !backend.masteringActive, !song.inFlight else { error = "Let the current audio job finish before deleting a project."; return }
+        backend.withLibraryAccess { [self] in
+        do {
+            changed(); saveTask?.cancel(); save()
+            let draft = state.selected == song.id ? state.composer : state.drafts[song.id]
+            let recovery = SongRecovery(note: state.notes[song.id], draft: draft)
+            try ProjectTrash.move(song.directory, root: Paths.output, depth: 2,
+                                  lock: Paths.custom.appendingPathComponent("worker.lock"),
+                                  metadata: JSONEncoder().encode(recovery), metadataName: "studio-recovery.json")
+            if player.songID == song.id { player.clear() }
+            state.notes.removeValue(forKey: song.id); state.drafts.removeValue(forKey: song.id)
+            if state.selected == song.id { state.selected = nil; state.composer = SongDraft() }
+            backend.songs.removeAll { $0.id == song.id }; backend.rescan(); save()
+        } catch { self.error = "Could not move the song to Trash: \(error.localizedDescription)" }
+    }
+    }
+
     func filtered(_ songs: [Song]) -> [Song] {
         songs.filter { (!favoritesOnly || state.notes[$0.id]?.favorite == true) && (search.isEmpty || title($0).localizedCaseInsensitiveContains(search)) }
     }

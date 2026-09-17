@@ -1,24 +1,16 @@
-# Optional mastering integration
+# Studio Mastering
 
-**ReSoul’s engine remains private.** This repository publishes the native interface and the process-level JSON contract only. It does not contain ReSoul’s DSP, Smart Master policy, repair values, 43-style catalog, JUCE build, or a redistributable ReSoul binary. No public engine download is promised.
+A complete local mastering engine, included in this community edition under **AGPL-3.0-only**. It provides full-song analysis, Smart Master recommendations, 43 styles, repair controls and 24-bit WAV rendering. See [license](LICENSE) and [notices](NOTICE.md).
 
-The screenshots show a working private integration. The default public build displays a clear missing-engine screen and continues to offer song creation independently.
+## Build
 
-## Authorized integration package
+`bash custom/package-local.sh` at the repository root builds and bundles the engine, catalog and native app. Requires macOS 14+, Apple Silicon, CMake, Ninja and Xcode command-line tools. CMake downloads the pinned JUCE revision. For an existing checkout, pass `JUCE_ROOT=/path/to/JUCE` as an environment variable. No model weights or generation runtime are required for mastering.
 
-A provider-supplied directory must contain:
-
-```text
-ReSoulMaster             executable native helper
-ReSoulCatalog.json      provider's presets and repair patches
-licenses/               all required engine and dependency notices
-```
-
-Build locally with `RESOUL_ENGINE_DIR=/path/to/authorized/package bash custom/package-local.sh`. This is a local integration mechanism, not permission to redistribute the engine. Never commit that directory, a resulting private bundle, or its catalog to this public repository.
+For a standalone helper: `cmake -S mastering -B mastering/build -G Ninja -DCMAKE_BUILD_TYPE=Release`, then `cmake --build mastering/build`. The executable is `mastering/build/StudioMasterEngine_artefacts/Release/StudioMasterEngine`; `--catalog` prints the style and quick-repair catalog.
 
 ## Invocation and input
 
-The app invokes `ReSoulMaster /absolute/path/request.json`. One process handles one operation and exits. Request fields:
+The app invokes `StudioMasterEngine /absolute/path/request.json`. One process handles one operation and exits. Request fields:
 
 | Field | Contract |
 | --- | --- |
@@ -29,7 +21,7 @@ The app invokes `ReSoulMaster /absolute/path/request.json`. One process handles 
 | `parameters` | Codable `MasterParameters` from the public Swift interface |
 | `presetName`, `title`, `artist` | Display/export metadata |
 
-See `app/YuEStudio/Sources/YuEStudio/MasteringModels.swift` for the public typed fields. Defaults define an interface state; they do not implement processing.
+See `app/YuEStudio/Sources/YuEStudio/MasteringModels.swift` for the public typed fields.
 
 ## Output protocol
 
@@ -43,7 +35,7 @@ A successful terminal record has `event: "result"`, `duration` (seconds), `sampl
 
 ## Catalog contract
 
-`presets` is an array of `name`, `description`, and complete `parameters` objects. `repairs` is an array of `name` and sparse `patch` objects. Repair identifiers are `Stereo`, `Bass`, `Mid`, and `High`; the interface labels them Fix Stereo, More Bass, Clear Mids, and Smooth Highs. Array patches use string indices; unrelated settings must be preserved. No proprietary catalog is provided here.
+`presets` is an array of `name`, `description`, and complete `parameters` objects. `repairs` is an array of `name` and sparse `patch` objects. Repair identifiers are `Stereo`, `Bass`, `Mid`, and `High`; the interface labels them Fix Stereo, More Bass, Clear Mids, and Smooth Highs. Array patches use string indices; unrelated settings must be preserved. The catalog is generated from the included source. HiFi is a non-stacking native parameter recipe; see `docs/HIFI.md`.
 
 ## Required behavior
 

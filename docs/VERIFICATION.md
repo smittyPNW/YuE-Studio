@@ -1,20 +1,25 @@
 # Verification and release boundaries
 
-## Public edition, 0.3.1
+## Community edition 0.4.0
 
-- Release Swift build and ad-hoc bundle signature verification passed on Apple Silicon.
-- 10 Swift tests passed: library/input behavior, sparse interface patches, export preservation, settings/version identity, and both directions of generation/mastering exclusion.
-- 6 Python worker-support tests passed: recoverable failures, saved artifacts, locks, and source preservation.
-- Shell setup/build scripts passed syntax checks.
-- The default public bundle contains no ReSoul helper, catalog, private DSP, JUCE binary or model weights.
-- A separate public-tree guard checks private file paths, personal paths, key files, audio/model blobs, and oversized files. Gitleaks is run separately before publication.
+Verified on an M4 Pro Mac mini with 24 GB unified memory:
 
-Tests use synthetic interface fixtures. Private ReSoul preset/DSP regression tests and their inputs are intentionally not published. The full upstream model suite and fresh multi-GB runtime download were not rerun for this packaging change. Existing runtime setup exits without replacing it.
+- Clean public-engine build fetched the pinned JUCE source, built the native helper and SwiftUI app, and passed deep/strict ad-hoc signature verification.
+- 15 Swift tests passed, including owned-directory boundaries, symlink/root rejection, a real subprocess lock, failed-move preservation, HiFi non-stacking, custom-EQ preservation, export collision checks and generation/mastering admission gates.
+- 14 Python tests passed, including engine output, cancellation, source preservation, shared locks, parameter rejection, HiFi headroom, worker submission and saved-generation recovery.
+- Installed-app checks: HiFi/Undo, explicit synthetic HiFi rendering, song Trash and mastering-session Trash, confirmation cancellation, clearing the deleted session's player, and preservation of the external imported file.
+- Both synthetic deleted projects were present in the Mac Trash with recovery metadata. Native Finder Put Back supplies the file restoration; the app reads the returned metadata when refreshing/activating.
+- Full-song HiFi validation preserved the input FLAC SHA-256 exactly and delivered 10,481,216 frames of stereo 48 kHz, 24-bit WAV (218.3587 seconds). From neutral controls, the example measured -14.0001 LUFS / -1.1200 dBTP. Applying HiFi over an existing Smart Master retained its other controls and measured about -14.0 LUFS / -2.2 dBTP. These are different settings, not contradictory measurements.
+- Real light/dark screenshots show the installed community UI. Campaign art is identified separately.
 
-## Private development observations
+The tests establish behavior, format and measured headroom, not a guarantee that HiFi improves every mix. Listen at matched level and retain the original when it sounds better.
 
-The previous full-quality generation comparison used the complete 218.36-second reference recording and found identical FLAC and latent bytes with the custom worker. The private ReSoul integration passed 7 additional engine checks and a full-song offline render. Source audio was unchanged; exported WAV matched the rendered master. The measured example was approximately -14.1 LUFS and -2.1 dBTP at 48 kHz, 24-bit stereo.
+## Preserved generation quality
 
-The current Quick fixes row was checked in the installed app: More Bass changes editable settings and labels the saved audio as unchanged; Undo restores the previous settings. It never starts rendering. Actual light/dark screenshots are included separately from imagegen marketing artwork.
+New generation still requests full composition planning, GPU MLX, 32 synthesis steps and lossless output. This release does not change model precision or generation DSP. The earlier full-quality generation comparison used the complete 218.36-second reference recording and found identical FLAC and latent bytes with the custom worker. No fresh model generation was required for this UI/mastering release, and the full upstream model suite/fresh multi-GB runtime install were not rerun.
 
-Those observations apply to the private development installation. The public repository does not contain the engine needed to reproduce its mastering results. No broad minimum-memory, speed, or best-in-class audio claim is made.
+## Publication boundary
+
+Studio Mastering source and presets are now intentionally included under AGPL-3.0-only. The commercial app's remaining source, private development history, personal libraries, audio, model weights, credentials and signing assets are excluded. A public-tree guard and a separate Gitleaks scan run before publishing. Automated scans are one check, not a mathematical guarantee of absence.
+
+Local bundles are ad-hoc signed. No notarized installer or automatic updater is supplied.

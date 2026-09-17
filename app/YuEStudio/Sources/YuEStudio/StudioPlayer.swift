@@ -86,6 +86,12 @@ final class StudioPlayer {
             } catch { if generation == token { loadingWaveform = false; self.error = "Audio could not be read: \(error.localizedDescription)" } }
         }
     }
+    func clear() {
+        pause(); waveformTask?.cancel(); generation = UUID()
+        player.replaceCurrentItem(with: nil); loadedURL = nil; songID = nil
+        title = "Choose a song to listen"; duration = 0; position = 0
+        waveform = []; loadingWaveform = false; hasDraft = false; isDraft = false; error = nil
+    }
     func invalidate(_ path: String) { if songID == path { pause(); loadedURL = nil } }
     func toggle() {
         guard loadedURL != nil else { return }

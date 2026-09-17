@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed on accidentally staged private-engine or personal runtime files."""
+"""Fail closed on accidentally staged personal, commercial-app or runtime files."""
 from pathlib import Path
 import re
 import subprocess
@@ -10,7 +10,7 @@ try:
 except subprocess.CalledProcessError:
     names = [str(p.relative_to(root)) for p in root.rglob('*') if p.is_file() and not any(part in {'.build', '.git', 'dist', '__pycache__'} for part in p.parts)]
 problems = []
-blocked_prefixes = ('mastering/vendor/', 'mastering/Source/', 'private/', 'custom/QA/', 'custom/backups/')
+blocked_prefixes = ('private/', 'custom/QA/', 'custom/backups/')
 blocked_names = {'ReSoulCatalog.json', 'SOURCE-MANIFEST.json', '.env', 'hosts.yml', 'credentials', 'id_rsa', 'id_ed25519'}
 blocked_suffixes = {'.wav', '.flac', '.mp3', '.m4a', '.aiff', '.safetensors', '.ckpt', '.pt', '.pth', '.npy', '.p12', '.p8', '.pem', '.key', '.dmg', '.dylib'}
 for name in filter(None, names):

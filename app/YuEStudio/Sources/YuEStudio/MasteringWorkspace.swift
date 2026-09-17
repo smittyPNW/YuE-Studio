@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// Extend the approved orange-and-ivory studio. ReSoul iOS supplies the task order:
+// Extend the approved orange-and-ivory studio. Studio Mastering iOS supplies the task order:
 // choose a track, choose a style or Smart Master, compare, then export.
 // Detailed controls remain opt-in; neither opening this workspace nor finishing
 // a generated song automatically processes its audio.
@@ -9,11 +9,13 @@ struct MasteringWorkspace: View {
     @Bindable var model: MasteringController
     @EnvironmentObject private var backend: Backend
     @State private var dropTarget = false
+    @State private var pendingDelete: MasterSession?
+    @State private var confirmDelete = false
     var body: some View {
         HStack(spacing: 0) {
             sidebar
             Divider()
-            Group { if !model.engineAvailable { engineNotIncluded } else if model.session != nil { editor } else { empty } }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            Group { if model.session != nil { editor } else { empty } }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onDrop(of: [.fileURL], isTargeted: $dropTarget) { providers in
             guard !model.busy, !backend.busy, let provider = providers.first else { return false }
@@ -21,6 +23,14 @@ struct MasteringWorkspace: View {
             return true
         }
         .overlay { if dropTarget { RoundedRectangle(cornerRadius: 12).strokeBorder(StudioTheme.accent, style: StrokeStyle(lineWidth: 3, dash: [8,5])).padding(8).allowsHitTesting(false) } }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in model.restoreReturnedSessions() }
+        .alert("Move mastering session to Trash?", isPresented: $confirmDelete) {
+            Button("Cancel", role: .cancel) { pendingDelete = nil }
+            Button("Move to Trash", role: .destructive) {
+                if let item = pendingDelete { model.moveToTrash(item, backend: backend) }
+                pendingDelete = nil
+            }
+        } message: { Text("“\(pendingDelete?.title ?? "This session")”, its working copy and saved masters will move to the Mac Trash. Your imported original and exported copies stay where they are. Use Put Back in Finder to restore it.") }
         .onChange(of: model.parameters) { _, _ in model.changed() }
         .onChange(of: model.after) { _, _ in model.audition(keepPosition: true) }
         .onChange(of: model.selectedVersion) { _, _ in if model.after { model.audition(keepPosition: true) } }
@@ -42,29 +52,28 @@ struct MasteringWorkspace: View {
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
                                 .background(model.library.selected == session.id ? StudioTheme.accent.opacity(0.13) : .clear, in: .rect(cornerRadius: 10))
                         }.buttonStyle(.plain).disabled(model.busy).accessibilityLabel("Open mastering session \(session.title)")
+                        .contextMenu {
+                            Button("Move to Trash…", systemImage: "trash", role: .destructive) { pendingDelete = session; confirmDelete = true }.disabled(model.busy || backend.busy)
+                            Button("Show session in Finder", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([session.folder]) }
+                        }
                     }
                 }
             }
             Spacer(minLength: 0)
             Divider()
-            Label("Powered by ReSoul", systemImage: "waveform.path").font(.caption).foregroundStyle(StudioTheme.highlight)
+            if let session = model.session {
+                Button("Move session to Trash…", systemImage: "trash") { pendingDelete = session; confirmDelete = true }
+                    .buttonStyle(.plain).font(.caption).disabled(model.busy || backend.busy)
+            }
+            Label("Studio Mastering", systemImage: "waveform.path").font(.caption).foregroundStyle(StudioTheme.highlight)
             Text("Master a finished mix, or bring a song over from Create.").font(.caption).foregroundStyle(StudioTheme.muted)
         }.padding(18).frame(width: 225).background(StudioTheme.sidebar)
-    }
-    private var engineNotIncluded: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Image(systemName: "waveform.path").font(.system(size: 50)).foregroundStyle(StudioTheme.highlight)
-            Text("A finishing room for your music.").font(.system(size: 32, weight: .semibold, design: .rounded))
-            Text("This public edition includes the mastering interface. ReSoul’s engine and style library are supplied separately and are not included in this download.").font(.title3).foregroundStyle(StudioTheme.muted)
-            Text("Song creation works independently. You can keep making music in Create.").font(.callout)
-            Link("Read the integration guide", destination: URL(string: "https://github.com/smittyPNW/YuE-Studio/blob/main/mastering/README.md")!)
-        }.frame(maxWidth: 540, alignment: .leading).padding(42)
     }
     private var empty: some View {
         VStack(alignment: .leading, spacing: 24) {
             Image(systemName: "waveform.path").font(.system(size: 54, weight: .light)).foregroundStyle(StudioTheme.highlight).accessibilityHidden(true)
             Text("Give your mix its final touch.").font(.system(size: 34, weight: .semibold, design: .rounded))
-            Text("Drop a music file here. Start with ReSoul’s Smart Master or choose a style, then listen before you commit.").font(.title3).foregroundStyle(StudioTheme.muted).fixedSize(horizontal: false, vertical: true)
+            Text("Drop a music file here. Start with Studio Mastering’s Smart Master or choose a style, then listen before you commit.").font(.title3).foregroundStyle(StudioTheme.muted).fixedSize(horizontal: false, vertical: true)
             Button("Choose a music file", systemImage: "square.and.arrow.down") { model.chooseFile(backend: backend) }.buttonStyle(StudioPrimaryButtonStyle()).disabled(backend.busy || model.busy)
             Text("WAV, AIFF, FLAC, MP3 or M4A\nYour original stays untouched. No song generation required.").font(.callout).foregroundStyle(StudioTheme.muted)
             if backend.busy { Label("A song is rendering. Import will be available when it finishes.", systemImage: "hourglass").font(.callout) }
@@ -93,7 +102,8 @@ struct MasteringWorkspace: View {
                                 Button("Undo", systemImage: "arrow.uturn.backward") { model.undo() }
                                     .disabled(!model.canUndo || model.busy)
                             }
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 10)], spacing: 10) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 10)], spacing: 10) {
+                                quickFix("HiFi", icon: "hifispeaker.fill", key: "HiFi")
                                 quickFix("Fix Stereo", icon: "speaker.wave.2", key: "Stereo")
                                 quickFix("More Bass", icon: "waveform.path", key: "Bass")
                                 quickFix("Clear Mids", icon: "slider.horizontal.3", key: "Mid")
@@ -127,7 +137,7 @@ struct MasteringWorkspace: View {
             Label(title, systemImage: icon)
                 .font(.system(size: 13, weight: .semibold))
                 .frame(maxWidth: .infinity).padding(.vertical, 10)
-                .foregroundStyle(StudioTheme.highlight)
+                .foregroundStyle(StudioTheme.ink)
                 .background(StudioTheme.highlight.opacity(0.09), in: RoundedRectangle(cornerRadius: 9))
                 .contentShape(RoundedRectangle(cornerRadius: 9))
         }.buttonStyle(.plain).help("Apply \(title). Render a new master to hear the change; Undo restores your previous settings.")
@@ -141,7 +151,7 @@ struct MasteringWorkspace: View {
                         HStack { Text(model.preset.replacingOccurrences(of: "GENRE / ", with: "")).font(.title3).fontWeight(.medium); Spacer(); Image(systemName: "chevron.up.chevron.down").font(.caption) }
                     }.buttonStyle(.plain).padding(13).background(StudioTheme.editor, in: .rect(cornerRadius: 10)).accessibilityLabel("Choose master style, \(model.preset)")
                 }.frame(maxWidth: .infinity)
-                Button { model.perform("smart", backend: backend) } label: { Label("Smart Master", systemImage: "waveform.badge.magnifyingglass").padding(.vertical, 8) }.buttonStyle(.bordered).help("Measure the whole song and suggest ReSoul’s conservative settings. Render to hear them.")
+                Button { model.perform("smart", backend: backend) } label: { Label("Smart Master", systemImage: "waveform.badge.magnifyingglass").padding(.vertical, 8) }.buttonStyle(.bordered).help("Measure the whole song and suggest Studio Mastering’s conservative settings. Render to hear them.")
             }
             Text("A style is a starting point. Smart Master listens first and avoids adding processing to an already loud, dense source.").font(.callout).foregroundStyle(StudioTheme.muted).fixedSize(horizontal: false, vertical: true)
         }.disabled(model.busy || backend.busy)
@@ -177,7 +187,7 @@ struct MasteringWorkspace: View {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(model.status).font(.callout).fixedSize(horizontal: false, vertical: true)
-                    Text("Full ReSoul processing · 24-bit WAV · source sample rate").font(.caption).foregroundStyle(StudioTheme.muted)
+                    Text("Full Studio Mastering processing · 24-bit WAV · source sample rate").font(.caption).foregroundStyle(StudioTheme.muted)
                 }
                 Spacer(minLength: 10)
                 if model.busy {
@@ -197,7 +207,7 @@ struct MasterStylePicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack { Text("Find the feel of your master").font(.title2).fontWeight(.semibold); Spacer(); Button("Done") { model.showStyles = false } }
-            Text("ReSoul’s current preset collection. Choose a starting point, then make it yours.").foregroundStyle(StudioTheme.muted)
+            Text("Studio Mastering’s current preset collection. Choose a starting point, then make it yours.").foregroundStyle(StudioTheme.muted)
             TextField("Search styles", text: $search).textFieldStyle(.roundedBorder)
             ScrollView {
                 LazyVStack(spacing: 0) {

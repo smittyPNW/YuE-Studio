@@ -19,6 +19,20 @@ struct MasterParameters: Codable, Equatable {
     var eq = [MasterEQ(enabled: true, frequencyHz: 40, gainDb: 0, q: 0.7, type: 1), MasterEQ(enabled: true, frequencyHz: 85, gainDb: 0, q: 1, type: 0), MasterEQ(enabled: true, frequencyHz: 220, gainDb: 0, q: 1, type: 0), MasterEQ(enabled: true, frequencyHz: 2500, gainDb: 0, q: 1, type: 0), MasterEQ(enabled: true, frequencyHz: 12000, gainDb: 0, q: 0.7, type: 2), MasterEQ(enabled: false, frequencyHz: 18000, gainDb: 0, q: 0.7, type: 4)]
     var loudnessPreset = 0; var targetLufs = -14.0; var ceilingDb = -1.0; var useTruePeak = true
     var normalizeGainDb = 0.0; var normalizeActive = false
+    func hiFi() -> MasterParameters {
+        var result = self
+        result.bass = 0.625 // +1.5 dB low shelf
+        result.mud = 0.12
+        result.mid = 0.5
+        result.treble = 0.55 // +0.6 dB high shelf
+        result.punch = 0.08
+        result.warmExciter = 0.04
+        result.airExciter = 0.02
+        result.targetLufs = -14; result.loudnessPreset = 0
+        result.normalizeActive = true; result.normalizeGainDb = 0
+        result.ceilingDb = min(ceilingDb, -1); result.useTruePeak = true
+        return result
+    }
     var dictionary: [String:Any] { (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(self)) as? [String:Any]) ?? [:] }
 }
 struct MasterMeasurement: Codable, Equatable {
@@ -52,7 +66,7 @@ func masterNeedsRender(parameters: MasterParameters, version: MasterVersion?) ->
     version == nil || version?.parameters != parameters
 }
 
-/// Sparse ReSoul quick repairs change only the fields touched by that repair,
+/// Sparse Studio Mastering quick repairs change only the fields touched by that repair,
 /// including individual EQ values. Unrelated custom bands stay intact.
 func applyingMasterPatch(_ patch: Any, to base: Any) -> Any {
     guard let changes = patch as? [String:Any] else { return patch }

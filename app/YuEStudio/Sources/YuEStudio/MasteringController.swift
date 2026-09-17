@@ -35,15 +35,15 @@ final class MasteringController {
         get { session?.title ?? "" }
         set { if let index = library.sessions.firstIndex(where: { $0.id == library.selected }) { library.sessions[index].title = newValue; changed() } }
     }
-    var engineAvailable: Bool { FileManager.default.isExecutableFile(atPath: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ReSoulMaster").path) }
     var canUndo: Bool { !history.isEmpty }
 
     init() {
         if let data = try? Data(contentsOf: libraryURL), let saved = try? JSONDecoder().decode(MasterLibrary.self, from: data) { library = saved }
-        if let url = Bundle.main.url(forResource: "ReSoulCatalog", withExtension: "json"), let data = try? Data(contentsOf: url), let object = try? JSONSerialization.jsonObject(with: data) as? [String:Any] {
+        if let url = Bundle.main.url(forResource: "StudioMasteringCatalog", withExtension: "json"), let data = try? Data(contentsOf: url), let object = try? JSONSerialization.jsonObject(with: data) as? [String:Any] {
             if let entries = object["presets"], let encoded = try? JSONSerialization.data(withJSONObject: entries) { presets = (try? JSONDecoder().decode([MasterPreset].self, from: encoded)) ?? [] }
             for item in object["repairs"] as? [[String:Any]] ?? [] { if let name = item["name"] as? String, let patch = item["patch"] as? [String:Any] { repairPatches[name] = patch } }
         }
+        restoreReturnedSessions()
         if let selected = session { parameters = selected.parameters; preset = selected.preset }
     }
     func save() {
@@ -66,17 +66,49 @@ final class MasteringController {
     func reset() { checkpoint(); parameters = MasterParameters(); preset = "Neutral / Manual"; status = "Neutral settings restored. Render when ready."; save() }
     func apply(_ style: MasterPreset) { checkpoint(); parameters = style.parameters; preset = style.name; showStyles = false; status = "\(style.displayName) selected. Render to hear these settings."; save() }
     func repair(_ name: String) {
+        if name == "HiFi" {
+            checkpoint(); parameters = parameters.hiFi(); preset = "HiFi"
+            status = "HiFi selected: deep bass, clear detail, gentle air. Render, then compare at matched level."; save(); return
+        }
         guard let patch = repairPatches[name] else { return }
         let values = applyingMasterPatch(patch, to: parameters.dictionary)
         guard let data = try? JSONSerialization.data(withJSONObject: values), let updated = try? JSONDecoder().decode(MasterParameters.self, from: data) else { return }
         checkpoint(); parameters = updated; preset = "Custom · \(name) repair"; status = "\(name) repair applied to the controls. Render to hear it."; save()
+    }
+    func moveToTrash(_ item: MasterSession, backend: Backend) {
+        guard !busy, !backend.busy, !backend.masteringActive else { error = "Let the current audio job finish before deleting a session."; return }
+        backend.withLibraryAccess { [self] in
+        do {
+            saveTask?.cancel(); save()
+            guard let saved = library.sessions.first(where: { $0.id == item.id }) else { return }
+            try ProjectTrash.move(saved.folder, root: root, depth: 1,
+                                  lock: Paths.custom.appendingPathComponent("worker.lock"),
+                                  metadata: JSONEncoder().encode(saved), metadataName: "studio-session.json")
+            if library.selected == saved.id {
+                player.clear(); library.selected = nil; selectedVersion = nil; after = false; history = []
+                parameters = MasterParameters(); preset = "Neutral / Manual"
+            }
+            library.sessions.removeAll { $0.id == saved.id }; save()
+        } catch { self.error = "Could not move the session to Trash: \(error.localizedDescription)" }
+    }
+    }
+
+    func restoreReturnedSessions() {
+        guard !busy else { return }
+        for folder in (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? [] {
+            guard let data = try? Data(contentsOf: folder.appendingPathComponent("studio-session.json")),
+                  let item = try? JSONDecoder().decode(MasterSession.self, from: data),
+                  !library.sessions.contains(where: { $0.id == item.id }),
+                  item.folder.standardizedFileURL == folder.standardizedFileURL,
+                  FileManager.default.fileExists(atPath: item.source) else { continue }
+            library.sessions.insert(item, at: 0)
+        }
     }
     func select(_ id: UUID) {
         guard !busy else { return }; save(); player.pause(); library.selected = id; selectedVersion = nil; after = false; history = []
         guard let session else { return }; parameters = session.parameters; preset = session.preset; status = "Your original stays untouched."; audition(); save()
     }
     func chooseFile(backend: Backend) {
-        guard engineAvailable else { error = "ReSoul mastering requires a separately supplied engine. See the repository’s mastering integration guide."; return }
         guard !busy, !backend.busy else { error = "Let the current render finish before importing audio for mastering."; return }
         let panel = NSOpenPanel(); panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
         panel.allowedContentTypes = ["wav","aiff","aif","flac","mp3","m4a"].compactMap { UTType(filenameExtension: $0) }
@@ -84,7 +116,6 @@ final class MasteringController {
         panel.begin { [weak self] response in if response == .OK, let url = panel.url { self?.importFile(url, title: nil, backend: backend) } }
     }
     func importFile(_ url: URL, title: String?, backend: Backend) {
-        guard engineAvailable else { error = "ReSoul mastering requires a separately supplied engine."; return }
         guard !busy, !backend.busy, !backend.masteringActive else { error = "Wait for the current generation or mastering job to finish."; return }
         let allowed = ["wav","aiff","aif","flac","mp3","m4a"]
         guard url.isFileURL, allowed.contains(url.pathExtension.lowercased()) else { error = "Choose a WAV, AIFF, FLAC, MP3 or M4A music file."; return }
@@ -122,8 +153,8 @@ final class MasteringController {
     func cancel() { guard busy else { return }; cancelling = true; status = "Cancelling safely…"; if let process, process.isRunning { process.terminate() } }
     private func run(command: String, backend: Backend) async throws -> MasterResponse {
         guard let session else { throw StudioFailure("Choose a song first.") }
-        let helper = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ReSoulMaster")
-        guard FileManager.default.isExecutableFile(atPath: helper.path) else { throw StudioFailure("The ReSoul engine is missing from this installation.") }
+        let helper = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/StudioMasterEngine")
+        guard FileManager.default.isExecutableFile(atPath: helper.path) else { throw StudioFailure("The Studio Mastering engine is missing from this installation.") }
         let job = UUID().uuidString; let output = session.folder.appendingPathComponent("master-\(job).wav")
         let request = session.folder.appendingPathComponent("request-\(job).json")
         let object: [String:Any] = ["command":command,"input":session.source,"output":output.path,"lock":Paths.custom.appendingPathComponent("worker.lock").path,"parameters":parameters.dictionary,"presetName":preset,"title":session.title,"artist":session.artist]

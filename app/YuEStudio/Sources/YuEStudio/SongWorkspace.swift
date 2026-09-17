@@ -65,7 +65,7 @@ struct SongWorkspace: View {
                 Spacer()
                 if let song, song.status == .ready, let masterSong {
                     Button("Master this song", systemImage: "slider.horizontal.3") { player.pause(); masterSong(song) }
-                        .disabled(backend.busy || backend.masteringActive).help("Optional: polish this recording with ReSoul. Your original is preserved.")
+                        .disabled(backend.busy || backend.masteringActive).help("Optional: polish this recording with Studio Mastering. Your original is preserved.")
                 }
                 Button {
                     library.save()

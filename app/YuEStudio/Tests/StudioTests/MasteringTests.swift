@@ -17,17 +17,27 @@ final class MasteringTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: source), mastered)
     }
 
-    func testSparseInterfacePatchPreservesUnrelatedControls() throws {
-        var custom = MasterParameters(); custom.eq[4].gainDb = 3.2; custom.eq[0].frequencyHz = 62
-        let patch: [String: Any] = ["eq": ["0": ["gainDb": 0.75]]]
-        let result = try JSONDecoder().decode(MasterParameters.self, from: JSONSerialization.data(withJSONObject: applyingMasterPatch(patch, to: custom.dictionary)))
-        XCTAssertEqual(result.eq[4], custom.eq[4])
-        XCTAssertEqual(result.eq[0].frequencyHz, 62)
-        XCTAssertEqual(result.eq[0].gainDb, 0.75)
+    func testQuickRepairPreservesUnrelatedCustomEQ() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let catalog = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("custom/Assets/StudioMasteringCatalog.json"))) as! [String:Any]
+        let repairs = catalog["repairs"] as! [[String:Any]]
+        var custom = MasterParameters(); custom.eq[4].gainDb = 3.2; custom.eq[0].frequencyHz = 62; custom.eq[0].enabled = false
+        for name in ["Stereo", "Bass"] {
+            let patch = repairs.first { $0["name"] as? String == name }!["patch"]!
+            let result = try JSONDecoder().decode(MasterParameters.self, from: JSONSerialization.data(withJSONObject: applyingMasterPatch(patch, to: custom.dictionary)))
+            XCTAssertEqual(result.eq[4], custom.eq[4])
+            XCTAssertEqual(result.eq[0].frequencyHz, 62)
+            XCTAssertFalse(result.eq[0].enabled)
+            if name == "Bass" { XCTAssertEqual(result.eq[0].gainDb, 1.5) }
+        }
     }
-    func testInterfaceParametersRoundTrip() throws {
-        let original = MasterParameters()
-        XCTAssertEqual(try JSONDecoder().decode(MasterParameters.self, from: JSONEncoder().encode(original)), original)
+    func testPresetCatalogDecodesEveryControl() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("custom/Assets/StudioMasteringCatalog.json"))
+        let json = try JSONSerialization.jsonObject(with: data) as! [String:Any]
+        let presets = try JSONDecoder().decode([MasterPreset].self, from: JSONSerialization.data(withJSONObject: json["presets"]!))
+        XCTAssertEqual(presets.count, 43)
+        for preset in presets { XCTAssertEqual(preset.parameters.eq.count, 6); XCTAssertTrue(preset.parameters.targetLufs.isFinite) }
     }
     func testEditedSettingsDoNotRelabelOldAudio() throws {
         let settings = MasterParameters()

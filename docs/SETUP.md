@@ -4,6 +4,7 @@
 
 - Apple Silicon Mac running macOS 14 or later.
 - Xcode command-line tools (`xcode-select --install`) and Swift 5.9 or newer.
+- CMake and Ninja for the mastering engine (`brew install cmake ninja`).
 - `uv` for generation setup (`brew install uv` if you use Homebrew).
 - Internet for dependency/model installation; enough disk for the several-GB model cache, runtime, build products, and song artifacts.
 - This edition was exercised on an M4 Pro with 24 GB memory. Runtime and song length affect resource needs.
@@ -16,7 +17,7 @@ An existing environment is not replaced. The script will say so and exit. Do not
 
 If setup is interrupted after creating the environment, inspect the error. Rerun the failed dependency/download step with that environment, or move the incomplete environment aside before rerunning setup. Do not delete existing model caches or song folders as a troubleshooting shortcut.
 
-The optional experimental Neural Engine bridge is not built by this setup script. The public UI defaults to the existing auto engine selection, which uses available engines and can fall back to MLX. No lower-step shortcut is introduced.
+The optional experimental Neural Engine bridge is not built by this setup script. The native UI uses full-quality GPU MLX with full composition planning. No lower-step shortcut is introduced.
 
 ## App bundle
 
@@ -24,7 +25,7 @@ The optional experimental Neural Engine bridge is not built by this setup script
 bash custom/package-local.sh
 ```
 
-Open `custom/dist/YuE Studio.app`. Copy it to Applications only after closing any running copy. If a different edition is installed, preserve that bundle before replacing it. Do not replace a working private-engine edition with the public bundle unless you intend to remove that bundled engine.
+Open `custom/dist/YuE Studio.app`. Copy it to Applications only after closing any running copy. If a different edition is installed, preserve that bundle before replacing it.
 
 The icon is included in the signed bundle. A Finder alias to the installed application will keep the same icon; pin that installed application in the Dock rather than a transient build path.
 
@@ -32,7 +33,7 @@ The package is ad-hoc signed, not notarized. This repository does not provide a 
 
 ## Optional mastering
 
-The default build contains no ReSoul executable or preset catalog. Master displays an informational screen until an authorized engine is supplied. See `mastering/README.md`. Generation setup is not required for an independently supplied mastering engine.
+The default build compiles the included Studio Mastering engine and its 43-style catalog. CMake fetches the pinned JUCE revision; an optional `JUCE_ROOT` environment variable can point to an existing checkout. See `mastering/README.md`. Generation setup and model weights are not required for mastering-only use. Run the build step before the tests to generate the catalog and helper.
 
 ## Tests
 

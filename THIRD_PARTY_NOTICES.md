@@ -13,3 +13,7 @@ the checkpoint's original inference implementation.
 These notices cover the identified source code and retain its original licenses.
 The YuE2 model checkpoint weights are separately licensed under CC BY-NC 4.0;
 see MODEL_LICENSE for the scope and full terms. This does not relicense third-party code.
+
+## Studio Mastering community edition
+
+The `mastering/` source and its JUCE-based executable use AGPL-3.0-only. See `mastering/LICENSE`, `mastering/NOTICE.md` and `mastering/JUCE-LICENSE.md`. This engine-specific license does not change the YuE2 model-weight license or the retained Apache-2.0 license of upstream generation/studio source.

@@ -34,7 +34,7 @@ final class Backend: ObservableObject {
 
     func start() {
         guard process == nil, !masteringActive else { return }
-        guard FileManager.default.fileExists(atPath: Paths.python.path) else { lastError = "The YuE runtime is missing. Run scripts/setup-runtime.sh from the source checkout, then reopen Studio. See the GitHub setup guide."; return }
+        guard FileManager.default.fileExists(atPath: Paths.python.path) else { lastError = "The YuE runtime is missing. Restore the original installation before starting Studio."; return }
         let p = Process()
         p.executableURL = Paths.python
         p.arguments = ["-u", Paths.worker.path]
@@ -57,7 +57,7 @@ final class Backend: ObservableObject {
             }
         }
         p.terminationHandler = { [weak self, weak p] _ in
-            Task { @MainActor [weak self, weak p] in
+            Task { @MainActor [weak self] in
                 guard let self, let p, self.process === p else { return }
                 self.workerStopped()
             }
@@ -238,6 +238,19 @@ final class Backend: ObservableObject {
         memoryMessage = "Music models released for mastering"
     }
     func endMastering() { masteringActive = false }
+
+    /// Idle workers hold the process lease too. Release ours before a library
+    /// mutation; another app instance remains protected by ProjectTrash's flock.
+    func withLibraryAccess(_ operation: @escaping @MainActor () throws -> Void) {
+        Task {
+            let reconnect = process != nil
+            do {
+                try await beginMastering()
+                defer { endMastering(); if reconnect { start() } }
+                try operation()
+            } catch { lastError = error.localizedDescription }
+        }
+    }
 
     func cancel(_ song: Song) { send(["cmd": "cancel", "path": song.path]) }
     func stop() { send(["cmd": "stop"]); append("Stop sent") }

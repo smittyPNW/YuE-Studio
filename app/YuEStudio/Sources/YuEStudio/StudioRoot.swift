@@ -18,7 +18,7 @@ struct StudioRoot: View {
                 MasteringWorkspace(model: mastering).frame(maxHeight: .infinity)
             } else {
             HStack(spacing: 0) {
-                LibrarySidebar(library: library)
+                LibrarySidebar(library: library, player: player)
                 Divider()
                 SongWorkspace(library: library, player: player, song: selected, masterSong: { song in
                     workspace = "master"; mastering.importFile(URL(fileURLWithPath: song.path), title: library.title(song), backend: backend)

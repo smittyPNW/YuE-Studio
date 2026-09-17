@@ -22,13 +22,14 @@ Maintained by [smittyPNW](https://github.com/smittyPNW). This edition contribute
 
 The public repository is a curated source snapshot, rather than a member of GitHub’s upstream fork network. That publishing choice does not change its upstream origin, ownership, or attribution.
 
-## ReSoul
+## Studio Mastering
 
-ReSoul’s mastering engine and preset library are proprietary and remain private. This public repository includes the integration interface and protocol, not the engine, DSP algorithms, Smart Master implementation, or style catalog. Screenshots showing ReSoul processing come from an authorized private integration.
+The copyright holder contributed the selected audio engine, DSP, analysis, Smart Master policy and preset library to this community edition. It is published under AGPL-3.0-only, with ownership and dependency notices preserved in [mastering/NOTICE.md](mastering/NOTICE.md). This does not publish the original commercial application's UI, billing or other app-specific source, and grants no rights to its branding.
 
 ## Licenses and third-party work
 
-- Public code retains the [Apache-2.0 license](LICENSE).
+- Studio/generation code retains the [Apache-2.0 license](LICENSE).
+- Studio Mastering is [AGPL-3.0-only](mastering/LICENSE), using the pinned JUCE dependency under its open-source terms.
 - YuE2 weights have a [separate model license](MODEL_LICENSE).
 - Additional upstream components retain their [third-party notices](THIRD_PARTY_NOTICES.md) and license texts in `licenses/`.
 - Original authors retain their rights. This customized edition does not imply endorsement by Tony Weston, M·A·P, or other upstream contributors.

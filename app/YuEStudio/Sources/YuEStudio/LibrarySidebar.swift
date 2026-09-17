@@ -3,6 +3,9 @@ import SwiftUI
 struct LibrarySidebar: View {
     @Bindable var library: StudioLibrary
     @EnvironmentObject var backend: Backend
+    var player: StudioPlayer
+    @State private var pendingDelete: Song?
+    @State private var confirmDelete = false
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -39,6 +42,11 @@ struct LibrarySidebar: View {
                                 .accessibilityIdentifier("favorite-" + song.run + "-" + String(song.index)).accessibilityLabel((library.state.notes[song.id]?.favorite == true ? "Unfavorite " : "Favorite ") + library.title(song))
                                 .labelStyle(.iconOnly).buttonStyle(.plain).font(.caption).foregroundStyle(library.state.notes[song.id]?.favorite == true ? StudioTheme.highlight : Color.secondary).padding(.top, 17).padding(.trailing, 10)
                         }
+                        .contextMenu {
+                            Button("Move to Trash…", systemImage: "trash", role: .destructive) { pendingDelete = song; confirmDelete = true }
+                                .disabled(backend.busy || backend.masteringActive)
+                            Button("Show project in Finder", systemImage: "folder") { NSWorkspace.shared.activateFileViewerSelecting([song.directory]) }
+                        }
                         .background(library.state.selected == song.id ? StudioTheme.accent.opacity(0.12) : .clear, in: .rect(cornerRadius: 9))
                     }
                     if library.filtered(backend.songs).isEmpty {
@@ -53,8 +61,22 @@ struct LibrarySidebar: View {
                 Image(systemName: "desktopcomputer").foregroundStyle(StudioTheme.highlight)
                 Text("Made on your Mac").font(.caption).foregroundStyle(.secondary)
             }
+            if let song = backend.songs.first(where: { $0.id == library.state.selected }) {
+                Button("Move song to Trash…", systemImage: "trash") { pendingDelete = song; confirmDelete = true }
+                    .buttonStyle(.plain).font(.caption).disabled(backend.busy || backend.masteringActive)
+                    .help("Move this song’s audio, lyrics and generation files to the Mac Trash.")
+            }
             Button("Open songs folder", systemImage: "folder") { NSWorkspace.shared.open(Paths.output) }.buttonStyle(.plain).font(.caption).foregroundStyle(.secondary).padding(.bottom, 18)
         }.padding(.horizontal, 16).frame(width: 224).background(StudioTheme.sidebar)
+        .alert("Move song to Trash?", isPresented: $confirmDelete) {
+            Button("Cancel", role: .cancel) { pendingDelete = nil }
+            Button("Move to Trash", role: .destructive) {
+                if let song = pendingDelete { library.moveToTrash(song, backend: backend, player: player) }
+                pendingDelete = nil
+            }
+        } message: {
+            Text("“\(pendingDelete.map { library.title($0) } ?? "This song")” and its project files will move to the Mac Trash. Exported copies and mastering sessions stay where they are. Use Put Back in Finder to restore it.")
+        }
     }
 }
 

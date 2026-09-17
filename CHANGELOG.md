@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — Community mastering
+
+- Studio Mastering engine, DSP and 43-style catalog now included under AGPL-3.0-only, with pinned JUCE build.
+- HiFi quick fix: restrained bass weight, clarity and air, with non-stacking settings and Undo.
+- Move song projects and mastering sessions to the Mac Trash; preserve external originals and exports, recover settings with Put Back.
+- Refreshed app screenshots, repository description and community release documentation.
+- Includes the song-queue JSON writer fix from main.
+
+Earlier entries describe their historical release contents.
+
+
 ## 0.3.1 — Public preview
 
 - Native orange/ivory and charcoal song workspace with persistent tuning-fork icon.
