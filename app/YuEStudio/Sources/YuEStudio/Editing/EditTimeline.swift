@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct EditTimeline: View {
+@MainActor struct EditTimeline: View {
     @Bindable var model: EditController
     @State private var samples: [[Float]] = []
     @State private var dragStart: Int64?
@@ -107,7 +107,7 @@ struct EditTimeline: View {
     }
 }
 
-struct EditTransportBar: View {
+@MainActor struct EditTransportBar: View {
     @Bindable var model: EditController
     var body: some View {
         HStack(spacing: 18) {

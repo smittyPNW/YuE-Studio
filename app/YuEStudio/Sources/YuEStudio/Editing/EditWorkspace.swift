@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct EditWorkspace: View {
+@MainActor struct EditWorkspace: View {
     @Bindable var model: EditController
     var master: (URL, String) -> Void
     @State private var dropTarget = false
@@ -154,7 +154,7 @@ struct EditWorkspace: View {
     }
 }
 
-struct EditToolbar: View {
+@MainActor struct EditToolbar: View {
     @Bindable var model: EditController
     var body: some View {
         HStack(spacing: 10) {
@@ -179,7 +179,7 @@ struct EditToolbar: View {
     }
 }
 
-struct EditInspector: View {
+@MainActor struct EditInspector: View {
     @Bindable var model: EditController
     @State private var gain = 0.0
     @State private var rampEnd = -6.0
@@ -257,7 +257,7 @@ struct EditInspector: View {
     }
 }
 
-struct EditAnalysisView: View {
+@MainActor struct EditAnalysisView: View {
     @Bindable var model: EditController
     var body: some View {
         GroupBox("Signal analysis") {
