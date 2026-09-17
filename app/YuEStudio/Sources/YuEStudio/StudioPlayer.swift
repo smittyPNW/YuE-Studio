@@ -18,91 +18,117 @@ final class StudioPlayer {
     var waveform: [Float] = []
     var loadingWaveform = false
     var error: String?
+    private(set) var isSwitching = false
+    private(set) var loadedURL: URL?
+    // These reflect the actual AVPlayer item and gain, rather than the UI selection.
+    var currentAssetURL: URL? { (player.currentItem?.asset as? AVURLAsset)?.url }
+    var effectiveVolume: Float { player.volume }
+    var actualPosition: Double { player.currentTime().seconds }
     private let player = AVPlayer()
     private var tick: Any?
     private var endObserver: NSObjectProtocol?
     private var waveformTask: Task<Void,Never>?
-    private var loadedURL: URL?
     private var generation = UUID()
+    private var seekID = UUID()
 
     init() {
-        tick = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.15, preferredTimescale: 600), queue: .main) { [weak self] time in
+        tick = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.15, preferredTimescale: 600), queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                if time.seconds.isFinite { self.position = max(0, time.seconds) }
-                if self.player.currentItem?.status == .failed { self.error = self.player.currentItem?.error?.localizedDescription ?? "Could not play this audio file."; self.playing = false }
+                guard let self, !self.isSwitching else { return }
+                let seconds = self.player.currentTime().seconds
+                if seconds.isFinite { self.position = max(0, seconds) }
+                if self.player.currentItem?.status == .failed {
+                    self.error = self.player.currentItem?.error?.localizedDescription ?? "Could not play this audio file."
+                    self.pause()
+                }
             }
         }
         endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main) { [weak self] note in
             guard let item = note.object as? AVPlayerItem else { return }
             Task { @MainActor [weak self] in
-                guard let self, item === self.player.currentItem else { return }
-                self.playing = false
-                if self.loop { self.seek(0); self.player.play(); self.playing = true }
-                else { self.position = self.duration }
+                guard let self, item === self.player.currentItem, !self.isSwitching else { return }
+                if self.loop { self.playing = true; self.seek(0) }
+                else { self.playing = false; self.position = self.duration }
             }
         }
     }
     func load(_ song: Song, title: String, draft: Bool = false, keepPosition: Bool = false) {
         let url = song.directory.appendingPathComponent(draft ? "draft.flac" : "audio.flac")
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        if loadedURL == url && songID == song.id { self.title = title; return }
-        let resume = keepPosition && playing
-        let oldPosition = keepPosition ? position : 0
-        player.pause(); playing = false; error = nil
-        songID = song.id; self.title = title; isDraft = draft; loadedURL = url
+        guard loadFile(url, title: title, keepPosition: keepPosition) else { return }
+        songID = song.id; isDraft = draft
         hasDraft = FileManager.default.fileExists(atPath: song.directory.appendingPathComponent("draft.flac").path)
-        duration = song.seconds; position = oldPosition
-        player.replaceCurrentItem(with: AVPlayerItem(url: url)); player.volume = volume * auditionGain
-        if oldPosition > 0 { player.seek(to: CMTime(seconds: oldPosition, preferredTimescale: 48000), toleranceBefore: .zero, toleranceAfter: .zero) }
-        if resume { player.play(); playing = true }
-        waveformTask?.cancel(); waveform = []; loadingWaveform = true
-        let token = UUID(); generation = token
-        waveformTask = Task {
-            do {
-                let result = try await Task.detached(priority: .utility) { try WaveformReader.read(url) }.value
-                guard !Task.isCancelled, generation == token else { return }
-                waveform = result.peaks; duration = result.seconds; loadingWaveform = false
-            } catch { if generation == token { loadingWaveform = false; self.error = "Waveform unavailable: \(error.localizedDescription)" } }
-        }
     }
-    func loadFile(_ url: URL, title: String, keepPosition: Bool = false) {
-        guard FileManager.default.fileExists(atPath: url.path) else { error = "This audio file has moved or is unavailable."; return }
-        if loadedURL == url { self.title = title; return }
+    @discardableResult
+    func loadFile(_ url: URL, title: String, keepPosition: Bool = false) -> Bool {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            clear(); error = "This audio file has moved or is unavailable."; return false
+        }
+        if loadedURL == url && player.currentItem?.status != .failed { self.title = title; return true }
         let resume = keepPosition && playing
         let oldPosition = keepPosition ? position : 0
-        pause(); error = nil; loadedURL = url; songID = url.path; self.title = title
-        hasDraft = false; isDraft = false; waveformTask?.cancel(); waveform = []; loadingWaveform = true
-        player.replaceCurrentItem(with: AVPlayerItem(url: url)); player.volume = volume * auditionGain
-        position = oldPosition
-        if oldPosition > 0 { player.seek(to: CMTime(seconds: oldPosition, preferredTimescale: 48000), toleranceBefore: .zero, toleranceAfter: .zero) }
-        if resume { player.play(); playing = true }
+        let seconds: Double
+        do {
+            let file = try AVAudioFile(forReading: url)
+            seconds = Double(file.length) / file.processingFormat.sampleRate
+            guard seconds.isFinite, seconds > 0 else { throw StudioFailure("This audio file is empty.") }
+        } catch {
+            clear(); self.error = "Audio could not be read: \(error.localizedDescription)"; return false
+        }
+        pause(); error = nil; seekID = UUID()
+        loadedURL = url; songID = url.path; self.title = title
+        hasDraft = false; isDraft = false
+        waveformTask?.cancel(); waveform = []; loadingWaveform = true
+        duration = seconds; position = min(max(0, oldPosition), duration)
+        player.replaceCurrentItem(with: AVPlayerItem(url: url))
+        player.volume = volume * auditionGain
+        playing = resume
+        // A/B and saved-version changes resume only after the sample-accurate seek.
+        seek(position)
         let token = UUID(); generation = token
         waveformTask = Task {
             do {
                 let result = try await Task.detached(priority: .utility) { try WaveformReader.read(url) }.value
                 guard !Task.isCancelled, generation == token else { return }
-                waveform = result.peaks; duration = result.seconds; loadingWaveform = false
-            } catch { if generation == token { loadingWaveform = false; self.error = "Audio could not be read: \(error.localizedDescription)" } }
+                waveform = result.peaks; loadingWaveform = false
+            } catch {
+                if generation == token { loadingWaveform = false; self.error = "Waveform unavailable: \(error.localizedDescription)" }
+            }
         }
+        return true
     }
     func clear() {
-        pause(); waveformTask?.cancel(); generation = UUID()
+        pause(); waveformTask?.cancel(); generation = UUID(); seekID = UUID(); isSwitching = false
         player.replaceCurrentItem(with: nil); loadedURL = nil; songID = nil
         title = "Choose a song to listen"; duration = 0; position = 0
         waveform = []; loadingWaveform = false; hasDraft = false; isDraft = false; error = nil
     }
-    func invalidate(_ path: String) { if songID == path { pause(); loadedURL = nil } }
+    func invalidate(_ path: String) { if songID == path { clear() } }
     func toggle() {
         guard loadedURL != nil else { return }
         if playing { pause() }
-        else { if position >= duration - 0.05 { seek(0) }; player.play(); playing = true }
+        else {
+            playing = true
+            if position >= duration - 0.05 { seek(0) }
+            else if !isSwitching { player.play() }
+        }
     }
     func pause() { player.pause(); playing = false }
     func seek(_ seconds: Double) {
-        let v = min(max(0, seconds), duration)
-        position = v
-        player.seek(to: CMTime(seconds: v, preferredTimescale: 48000), toleranceBefore: .zero, toleranceAfter: .zero)
+        guard loadedURL != nil else { return }
+        let value = min(max(0, seconds), duration)
+        let token = UUID(); seekID = token; isSwitching = true
+        position = value
+        player.pause()
+        player.seek(to: CMTime(seconds: value, preferredTimescale: 192000), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            Task { @MainActor [weak self] in
+                guard let self, self.seekID == token else { return }
+                self.isSwitching = false
+                guard finished else {
+                    self.pause(); self.error = "Playback could not seek to this position. Try Play again."; return
+                }
+                if self.playing { self.player.play() }
+            }
+        }
     }
 }
 

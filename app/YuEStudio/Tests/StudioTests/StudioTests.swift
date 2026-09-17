@@ -31,7 +31,7 @@ final class StudioTests: XCTestCase {
         XCTAssertEqual(waveform.seconds, 0.1, accuracy: 0.0001)
         XCTAssertEqual(waveform.peaks.count, 700)
         XCTAssertGreaterThan(waveform.peaks.max()!, 0.49)
-        try ExportService.export(source: inputURL, destination: outputURL, wav: true)
+        try ExportService.export(source: inputURL, destination: outputURL, format: .wavFloat)
         let output = try AVAudioFile(forReading: outputURL)
         let recovered = AVAudioPCMBuffer(pcmFormat: output.processingFormat, frameCapacity: 4800)!
         try output.read(into: recovered)

@@ -15,9 +15,14 @@ final class MasteringController {
     var status = "Your original stays untouched."
     var error: String?
     var notice: String?
-    var after = false
-    var matchListeningLevel = true
-    var selectedVersion: UUID?
+    var after = false { didSet { if oldValue != after { audition(keepPosition: true) } } }
+    var matchListeningLevel = true { didSet { updateListeningGain() } }
+    var selectedVersion: UUID? {
+        didSet {
+            guard oldValue != selectedVersion else { return }
+            if after { audition(keepPosition: true) } else { updateListeningGain() }
+        }
+    }
     var showStyles = false
     var showAdvanced = false
     var showRepairs = false
@@ -26,8 +31,8 @@ final class MasteringController {
     private var history: [(MasterParameters,String)] = []
     private var saveTask: Task<Void,Never>?
     private var repairPatches: [String:[String:Any]] = [:]
-    private let libraryURL = Paths.custom.appendingPathComponent("mastering-library.json")
-    private let root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Music/YuE Studio Masters")
+    private let libraryURL: URL
+    private let root: URL
     var session: MasterSession? { library.sessions.first { $0.id == library.selected } }
     var version: MasterVersion? { session?.versions.first { $0.id == selectedVersion } ?? session?.versions.last }
     var needsRender: Bool { masterNeedsRender(parameters: parameters, version: version) }
@@ -37,7 +42,9 @@ final class MasteringController {
     }
     var canUndo: Bool { !history.isEmpty }
 
-    init() {
+    init(libraryURL: URL = Paths.custom.appendingPathComponent("mastering-library.json"),
+         root: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Music/YuE Studio Masters")) {
+        self.libraryURL = libraryURL; self.root = root
         if let data = try? Data(contentsOf: libraryURL), let saved = try? JSONDecoder().decode(MasterLibrary.self, from: data) { library = saved }
         if let url = Bundle.main.url(forResource: "StudioMasteringCatalog", withExtension: "json"), let data = try? Data(contentsOf: url), let object = try? JSONSerialization.jsonObject(with: data) as? [String:Any] {
             if let entries = object["presets"], let encoded = try? JSONSerialization.data(withJSONObject: entries) { presets = (try? JSONDecoder().decode([MasterPreset].self, from: encoded)) ?? [] }
@@ -48,7 +55,7 @@ final class MasteringController {
     }
     func save() {
         if let index = library.sessions.firstIndex(where: { $0.id == library.selected }) { library.sessions[index].parameters = parameters; library.sessions[index].preset = preset }
-        do { try FileManager.default.createDirectory(at: Paths.custom, withIntermediateDirectories: true); try JSONEncoder().encode(library).write(to: libraryURL, options: .atomic) }
+        do { try FileManager.default.createDirectory(at: libraryURL.deletingLastPathComponent(), withIntermediateDirectories: true); try JSONEncoder().encode(library).write(to: libraryURL, options: .atomic) }
         catch { self.error = "Could not save mastering settings: \(error.localizedDescription)" }
     }
     func changed() {
@@ -66,6 +73,10 @@ final class MasteringController {
     func reset() { checkpoint(); parameters = MasterParameters(); preset = "Neutral / Manual"; status = "Neutral settings restored. Render when ready."; save() }
     func apply(_ style: MasterPreset) { checkpoint(); parameters = style.parameters; preset = style.name; showStyles = false; status = "\(style.displayName) selected. Render to hear these settings."; save() }
     func repair(_ name: String) {
+        if name == "Max Volume" {
+            checkpoint(); parameters = parameters.maxVolume(); preset = "Custom · Max Volume"
+            status = "Max Volume selected: aims for −9 LUFS with a \(String(format: "%.1f", parameters.ceilingDb)) dBTP ceiling and limited peak reduction. Render to hear the full-song pass."; save(); return
+        }
         if name == "HiFi" {
             checkpoint(); parameters = parameters.hiFi(); preset = "HiFi"
             status = "HiFi selected: deep bass, clear detail, gentle air. Render, then compare at matched level."; save(); return
@@ -198,27 +209,32 @@ final class MasteringController {
         }
         progress = 1; status = response.message ?? "Ready"
         if command == "smart" { status += " Render to hear these settings." }
+        updateListeningGain()
         save()
     }
     func audition(keepPosition: Bool = false) {
         guard let session else { return }
-        let source = after ? (version?.path ?? session.source) : session.source
-        player.loadFile(URL(fileURLWithPath: source), title: session.title + (after ? " · After" : " · Before"), keepPosition: keepPosition)
+        guard !after || version != nil else {
+            player.clear(); error = "Render a master before choosing After."; return
+        }
+        let source = after ? version!.path : session.source
+        // Apply the correct gain before the new item can start playing.
         updateListeningGain()
+        player.loadFile(URL(fileURLWithPath: source), title: session.title + (after ? " · After" : " · Before"), keepPosition: keepPosition)
     }
     func updateListeningGain() {
         var gain: Float = 1
-        if matchListeningLevel, let before = session?.measurement?.lufs, let afterLevel = version?.measurement.lufs, before > -69, afterLevel > -69 {
+        if matchListeningLevel, let before = session?.measurement?.lufs, let afterLevel = version?.measurement.lufs, before.isFinite, afterLevel.isFinite, before > -69, afterLevel > -69 {
             let loudness = after ? afterLevel : before
             gain = Float(pow(10, (min(before, afterLevel) - loudness) / 20))
         }
         player.auditionGain = gain
     }
-    func export() {
+    func export(format: AudioExportFormat = .wav24) {
         guard let version, let session else { return }
         let source = URL(fileURLWithPath: version.path)
-        let panel = NSSavePanel(); panel.allowedContentTypes = [.wav]; panel.nameFieldStringValue = session.title.replacingOccurrences(of: "/", with: "-") + " — Master.wav"
-        panel.message = "Export this rendered version as 24-bit WAV at the source sample rate. Listening level matching does not affect the file."
+        let panel = ExportService.savePanel(title: session.title + " — Master", format: format)
+        panel.message += " Listening level matching only affects playback."
         panel.begin { [weak self] response in
             guard response == .OK, let destination = panel.url else { return }
             Task {
@@ -226,7 +242,7 @@ final class MasteringController {
                     guard destination.resolvingSymlinksInPath().standardizedFileURL != URL(fileURLWithPath: session.originalPath).resolvingSymlinksInPath().standardizedFileURL,
                           destination.resolvingSymlinksInPath().standardizedFileURL != URL(fileURLWithPath: session.source).resolvingSymlinksInPath().standardizedFileURL,
                           !session.versions.contains(where: { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().standardizedFileURL == destination.resolvingSymlinksInPath().standardizedFileURL }) else { throw StudioFailure("Choose a destination outside this session's source and master files.") }
-                    try await Task.detached(priority: .utility) { try ExportService.exportMaster(source: source, destination: destination) }.value
+                    try await Task.detached(priority: .utility) { try ExportService.exportMaster(source: source, destination: destination, format: format) }.value
                     self?.notice = "Exported \(destination.lastPathComponent)"
                 } catch { self?.error = error.localizedDescription }
             }

@@ -17,3 +17,7 @@ see MODEL_LICENSE for the scope and full terms. This does not relicense third-pa
 ## Studio Mastering community edition
 
 The `mastering/` source and its JUCE-based executable use AGPL-3.0-only. See `mastering/LICENSE`, `mastering/NOTICE.md` and `mastering/JUCE-LICENSE.md`. This engine-specific license does not change the YuE2 model-weight license or the retained Apache-2.0 license of upstream generation/studio source.
+
+## MP3 export
+
+MP3 sharing copies use an encoding-only LAME 4.0 command-line helper from the [LAME Project](https://lame.sourceforge.io/), licensed under LGPL-2.0-or-later. The helper is built from the SHA-256-pinned upstream archive by `scripts/build-mp3-encoder.sh`, without a decoder or external runtime libraries. Its complete corresponding source archive, license texts and build script are included in `YuE Studio.app/Contents/Resources/LAME/`. The app invokes this separate executable and does not link LAME into the Swift application. The source archive is unmodified; compiler flags include the standard locale header for current macOS toolchains.

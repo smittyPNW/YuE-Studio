@@ -35,10 +35,10 @@ cp "$ROOT/custom/Getting Started.html" "$STAGE/Getting Started.html"
 swift "$ROOT/custom/dmg-background.swift" "$STAGE/background.png"
 
 if [[ "$SIGN" == - ]]; then
-  codesign --force --sign - "$APP/Contents/Helpers/StudioMasterEngine"
+  for HELPER in "$APP/Contents/Helpers/"*; do codesign --force --sign - "$HELPER"; done
   codesign --force --sign - "$APP"
 else
-  codesign --force --options runtime --timestamp --sign "$SIGN" "$APP/Contents/Helpers/StudioMasterEngine"
+  for HELPER in "$APP/Contents/Helpers/"*; do codesign --force --options runtime --timestamp --sign "$SIGN" "$HELPER"; done
   codesign --force --options runtime --timestamp --sign "$SIGN" "$APP"
 fi
 codesign --verify --deep --strict "$APP"

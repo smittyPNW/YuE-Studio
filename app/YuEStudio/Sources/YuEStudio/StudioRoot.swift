@@ -5,23 +5,33 @@ struct StudioRoot: View {
     @Bindable var library: StudioLibrary
     @Bindable var player: StudioPlayer
     @Bindable var mastering: MasteringController
+    @Bindable var editor: EditController
     @AppStorage("workspace") private var workspace = "create"
     @AppStorage("appearance") private var appearance = "dark"
     @State private var showImport = false
+    var startServices = true
     var selected: Song? { backend.songs.first { $0.id == library.state.selected } }
     var playingSong: Song? { backend.songs.first { $0.id == player.songID } }
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
-            if workspace == "master" {
-                MasteringWorkspace(model: mastering).frame(maxHeight: .infinity)
+            if workspace == "edit" {
+                EditWorkspace(model: editor, master: { url, title in
+                    workspace = "master"; mastering.importFile(url, title: title, backend: backend)
+                }).frame(maxHeight: .infinity)
+            } else if workspace == "master" {
+                MasteringWorkspace(model: mastering, editAudio: { url, title in
+                    workspace = "edit"; editor.importAudio(url, title: title)
+                }).frame(maxHeight: .infinity)
             } else {
             HStack(spacing: 0) {
                 LibrarySidebar(library: library, player: player)
                 Divider()
                 SongWorkspace(library: library, player: player, song: selected, masterSong: { song in
                     workspace = "master"; mastering.importFile(URL(fileURLWithPath: song.path), title: library.title(song), backend: backend)
+                }, editSong: { song in
+                    workspace = "edit"; editor.importAudio(URL(fileURLWithPath: song.path), title: library.title(song))
                 }).frame(maxWidth: .infinity)
                 if library.showInspector { Divider(); StudioInspector(library: library) }
             }.frame(maxHeight: .infinity)
@@ -34,20 +44,24 @@ struct StudioRoot: View {
                 }.padding(12).frame(height: 140).background(StudioTheme.sidebar)
             }
             Divider()
-            PlayerBar(player: workspace == "master" ? mastering.player : player, song: workspace == "master" ? nil : playingSong)
+            if workspace == "edit" { EditTransportBar(model: editor) }
+            else { PlayerBar(player: workspace == "master" ? mastering.player : player, song: workspace == "master" ? nil : playingSong) }
         }
         .background(StudioTheme.canvas).foregroundStyle(StudioTheme.ink).tint(StudioTheme.accent)
         .preferredColorScheme(appearance == "system" ? nil : (appearance == "light" ? .light : .dark))
         .frame(minWidth: workspace == "create" && library.showInspector ? 1170 : 1060, minHeight: 720)
         .task {
+            guard startServices else { return }
+            editor.backend = backend
             backend.rescan(); library.register(backend.songs)
             if library.state.selected == nil, library.state.composer.style.isEmpty, let first = backend.songs.first(where: { $0.status == .ready }) { library.select(first) }
-            if workspace == "create" { loadSelected(); backend.start() } else { mastering.audition() }
+            if workspace == "create" { loadSelected(); backend.start() } else if workspace == "master" { mastering.audition() } else { editor.activate() }
         }
         .onChange(of: workspace) { _, mode in
-            player.pause(); mastering.player.pause()
-            if mode == "create" { backend.start(); loadSelected() } else if !mastering.busy { mastering.audition() }
+            player.pause(); mastering.player.pause(); editor.transport.pause()
+            if mode == "create" { backend.start(); loadSelected() } else if mode == "master", !mastering.busy { mastering.audition() } else if mode == "edit" { editor.activate() }
         }
+        .onChange(of: editor.busy) { _, busy in if !busy && workspace == "create" { backend.start() } }
         .onChange(of: mastering.busy) { _, busy in if !busy && workspace == "create" { backend.start() } }
         .onChange(of: library.state.composer) { _, _ in library.changed() }
         .onChange(of: library.state.selected) { _, _ in loadSelected() }
@@ -75,11 +89,13 @@ struct StudioRoot: View {
             Text("YuE Studio").font(.title3).fontWeight(.semibold)
             Picker("Workspace", selection: $workspace) {
                 Text("Create").tag("create")
+                Text("Edit").tag("edit")
                 Text("Master").tag("master")
-            }.pickerStyle(.segmented).labelsHidden().frame(width: 180).padding(.leading, 18)
+            }.pickerStyle(.segmented).labelsHidden().frame(width: 245).padding(.leading, 18)
             Spacer()
             if backend.busy { Label("Creating", systemImage: "waveform").font(.caption).foregroundStyle(StudioTheme.highlight) }
             if workspace == "create" { Button("Import prompt", systemImage: "doc.on.clipboard") { showImport = true }.buttonStyle(.plain).help("Import the two blocks from the songwriter skill")
+            } else if workspace == "edit" { Button("Open audio", systemImage: "square.and.arrow.down") { editor.chooseFile() }.buttonStyle(.plain).disabled(editor.unavailable)
             } else { Button("Import audio", systemImage: "square.and.arrow.down") { mastering.chooseFile(backend: backend) }.buttonStyle(.plain).disabled(mastering.busy || backend.busy) }
             Divider().frame(height: 18)
             Menu {

@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 // a generated song automatically processes its audio.
 struct MasteringWorkspace: View {
     @Bindable var model: MasteringController
+    var editAudio: ((URL, String) -> Void)? = nil
     @EnvironmentObject private var backend: Backend
     @State private var dropTarget = false
     @State private var pendingDelete: MasterSession?
@@ -32,9 +33,6 @@ struct MasteringWorkspace: View {
             }
         } message: { Text("“\(pendingDelete?.title ?? "This session")”, its working copy and saved masters will move to the Mac Trash. Your imported original and exported copies stay where they are. Use Put Back in Finder to restore it.") }
         .onChange(of: model.parameters) { _, _ in model.changed() }
-        .onChange(of: model.after) { _, _ in model.audition(keepPosition: true) }
-        .onChange(of: model.selectedVersion) { _, _ in if model.after { model.audition(keepPosition: true) } }
-        .onChange(of: model.matchListeningLevel) { _, _ in model.updateListeningGain() }
         .sheet(isPresented: $model.showStyles) { MasterStylePicker(model: model) }
         .alert("Mastering", isPresented: Binding(get: { model.error != nil || model.player.error != nil }, set: { if !$0 { model.error = nil; model.player.error = nil } })) { Button("OK") { model.error = nil; model.player.error = nil } } message: { Text(model.error ?? model.player.error ?? "") }
         .alert("Mastering", isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) { Button("OK") { model.notice = nil } } message: { Text(model.notice ?? "") }
@@ -89,11 +87,25 @@ struct MasteringWorkspace: View {
                         Text("\(clockText(session.duration)) · \(session.sampleRate > 0 ? String(format: "%.1f kHz", session.sampleRate / 1000) : "Audio ready") · original preserved").font(.subheadline).foregroundStyle(StudioTheme.muted)
                     }
                     Spacer()
-                    Button("Export master", systemImage: "square.and.arrow.up") { model.export() }.disabled(model.version == nil || model.busy)
+                    if let editAudio {
+                        Menu("Edit recording", systemImage: "waveform.path") {
+                            Button("Edit original") { model.player.pause(); editAudio(URL(fileURLWithPath: session.source), session.title) }
+                            if let version = model.version {
+                                Button("Edit selected master") { model.player.pause(); editAudio(URL(fileURLWithPath: version.path), session.title + " — Master") }
+                            }
+                        }.fixedSize().disabled(model.busy || backend.busy || backend.masteringActive)
+                    }
+                    Menu {
+                        ForEach(AudioExportFormat.allCases) { format in
+                            Button(format.title + "…") { model.export(format: format) }
+                        }
+                    } label: { Label("Export master", systemImage: "square.and.arrow.up") }
+                        .menuStyle(.borderlessButton).fixedSize().disabled(model.version == nil || model.busy)
                 }.padding(.bottom, 24)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
                         styleAndActions
+                        fineTune
                         comparison
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
@@ -104,6 +116,7 @@ struct MasteringWorkspace: View {
                             }
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 10)], spacing: 10) {
                                 quickFix("HiFi", icon: "hifispeaker.fill", key: "HiFi")
+                                quickFix("Max Volume", icon: "speaker.wave.3.fill", key: "Max Volume")
                                 quickFix("Fix Stereo", icon: "speaker.wave.2", key: "Stereo")
                                 quickFix("More Bass", icon: "waveform.path", key: "Bass")
                                 quickFix("Clear Mids", icon: "slider.horizontal.3", key: "Mid")
@@ -112,9 +125,6 @@ struct MasteringWorkspace: View {
                             Text("Choose a fix, then render to hear it. Your original stays untouched.")
                                 .font(.caption).foregroundStyle(StudioTheme.muted)
                         }
-                        DisclosureGroup("Fine-tune your master", isExpanded: $model.showAdvanced) {
-                            MasteringControls(model: model).padding(.top, 16).disabled(model.busy)
-                        }.font(.headline)
                         if let version = model.version {
                             HStack {
                                 Text("Saved versions").font(.subheadline)
@@ -131,6 +141,29 @@ struct MasteringWorkspace: View {
                 footer.padding(.top, 16)
             }
         }.padding(26)
+    }
+    private var fineTune: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button { model.showAdvanced.toggle() } label: {
+                HStack(spacing: 14) {
+                    Image(systemName: "slider.horizontal.3").font(.title2).foregroundStyle(StudioTheme.highlight)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Fine Tune Your Master").font(.title3).fontWeight(.semibold)
+                        Text("Tone, dynamics, stereo, EQ & delivery").font(.callout).foregroundStyle(StudioTheme.muted)
+                    }
+                    Spacer()
+                    Text(model.showAdvanced ? "Hide controls" : "Show controls").font(.callout).fontWeight(.medium).foregroundStyle(StudioTheme.highlight)
+                    Image(systemName: model.showAdvanced ? "chevron.up" : "chevron.down").foregroundStyle(StudioTheme.highlight)
+                }.padding(18).frame(maxWidth: .infinity, alignment: .leading).contentShape(.rect)
+            }.buttonStyle(.plain).accessibilityLabel("Fine Tune Your Master")
+                .accessibilityValue(model.showAdvanced ? "Expanded" : "Collapsed")
+                .accessibilityHint("Show or hide tone, dynamics, stereo, equalizer and delivery controls")
+            if model.showAdvanced {
+                Divider().padding(.horizontal, 18)
+                MasteringControls(model: model).padding(18).disabled(model.busy)
+            }
+        }.background(StudioTheme.editor, in: .rect(cornerRadius: 12))
+        .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(StudioTheme.highlight.opacity(0.35), lineWidth: 1).allowsHitTesting(false) }
     }
     private func quickFix(_ title: String, icon: String, key: String) -> some View {
         Button { model.repair(key) } label: {
@@ -169,6 +202,12 @@ struct MasteringWorkspace: View {
                 measurement("Rendered master", value: model.version?.measurement)
                 Spacer()
                 Toggle("Match listening level", isOn: $model.matchListeningLevel).toggleStyle(.checkbox).font(.callout).disabled(model.version == nil).help("Only turns down the louder version during playback. Your export is unaffected.")
+            }
+            Text(model.player.loadedURL == nil ? "Playback unavailable" : (model.after ? "Listening to: saved master" : "Listening to: original mix"))
+                .font(.callout).fontWeight(.medium).foregroundStyle(StudioTheme.highlight)
+            if model.matchListeningLevel && model.version != nil {
+                Text("Matched playback turns down the louder version for a fair comparison. Turn it off to hear the delivered volume.")
+                    .font(.caption).foregroundStyle(StudioTheme.muted).fixedSize(horizontal: false, vertical: true)
             }
             if model.version != nil && model.needsRender {
                 Label("Settings changed. After plays the saved master until you render again.", systemImage: "clock.arrow.circlepath").font(.caption).foregroundStyle(StudioTheme.highlight)

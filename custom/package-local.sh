@@ -2,6 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/custom/dist/YuE Studio.app"
+bash "$ROOT/scripts/build-mp3-encoder.sh"
 if [[ -n "${JUCE_ROOT:-}" ]]; then
   cmake -S "$ROOT/mastering" -B "$ROOT/mastering/build" -G Ninja -DCMAKE_BUILD_TYPE=Release "-DJUCE_ROOT=$JUCE_ROOT"
 else
@@ -16,6 +17,10 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/worker" "$APP/Contents/H
 rm -f "$APP/Contents/Helpers/ReSoulMaster" "$APP/Contents/Resources/ReSoulCatalog.json"
 cp "$ROOT/app/YuEStudio/.build/release/YuEStudio" "$APP/Contents/MacOS/YuE Studio"
 cp "$ROOT/mastering/build/StudioMasterEngine_artefacts/Release/StudioMasterEngine" "$APP/Contents/Helpers/StudioMasterEngine"
+cp "$ROOT/custom/build/mp3/lame-4.0/frontend/lame" "$APP/Contents/Helpers/StudioMP3Encoder"
+mkdir -p "$APP/Contents/Resources/LAME"
+cp "$ROOT/custom/build/mp3/lame-4.0.tar.gz" "$ROOT/custom/build/mp3/lame-4.0/COPYING" "$ROOT/custom/build/mp3/lame-4.0/LICENSE" "$ROOT/scripts/build-mp3-encoder.sh" "$APP/Contents/Resources/LAME/"
+codesign --force --sign - "$APP/Contents/Helpers/StudioMP3Encoder"
 cp "$ROOT/custom/Assets/StudioMasteringCatalog.json" "$ROOT/mastering/JUCE-LICENSE.md" "$ROOT/mastering/NOTICE.md" "$ROOT/mastering/LICENSE" "$APP/Contents/Resources/"
 codesign --force --sign - "$APP/Contents/Helpers/StudioMasterEngine"
 cp "$ROOT/tools/yue2_worker.py" "$ROOT/tools/studio_support.py" "$APP/Contents/Resources/worker/"
@@ -36,8 +41,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleDisplayName</key><string>YuE Studio</string>
 <key>CFBundleIdentifier</key><string>com.solution7.yuestudio.custom</string>
 <key>CFBundleExecutable</key><string>YuE Studio</string>
-<key>CFBundleVersion</key><string>20260916.10</string>
-<key>CFBundleShortVersionString</key><string>0.4.0</string>
+<key>CFBundleVersion</key><string>20260917.1</string>
+<key>CFBundleShortVersionString</key><string>0.5.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>

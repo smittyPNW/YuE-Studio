@@ -81,3 +81,26 @@ class MasteringEngineTests(unittest.TestCase):
         self.assertEqual(code,0,event)
         self.assertLessEqual(event['analysis']['truePeak'],-0.9)
         self.assertTrue(math.isfinite(event['analysis']['lufs']))
+
+    def test_max_volume_measures_full_track_and_respects_true_peak(self):
+        # Quiet, transient-rich stereo material exercises gain and peak protection.
+        with wave.open(str(self.input), 'wb') as w:
+            w.setparams((2, 2, 48000, 0, 'NONE', 'not compressed'))
+            frames=[]
+            for i in range(48000 * 3):
+                envelope=0.20 + (0.50 if i % 24000 < 80 else 0)
+                frames.append(struct.pack('<hh', int(15000*envelope*math.sin(i*.71)), int(14500*envelope*math.sin(i*.43))))
+            w.writeframes(b''.join(frames))
+        self.original_hash=hashlib.sha256(self.input.read_bytes()).hexdigest()
+        code,before=self.run_helper(self.request('analyze'))
+        self.assertEqual(code,0,before)
+        self.defaults.update(targetLufs=-9, ceilingDb=-1, useTruePeak=True,
+                             normalizeActive=True, normalizeGainDb=0, masterVolDb=0, finalCharacter=0)
+        code,after=self.run_helper(self.request('render'))
+        self.assertEqual(code,0,after)
+        self.assertGreater(after['analysis']['lufs'],before['analysis']['lufs']+1)
+        self.assertLessEqual(after['analysis']['truePeak'],-0.95)
+        self.assertLess(after['analysis']['samplePeak'],0)
+        with wave.open(str(self.root/'master.wav'),'rb') as w:
+            self.assertEqual(w.getnframes(),144000)
+            self.assertEqual(w.getsampwidth(),3)

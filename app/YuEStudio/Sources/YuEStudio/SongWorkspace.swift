@@ -7,6 +7,7 @@ struct SongWorkspace: View {
     @State private var jump: EditorJump?
     let song: Song?
     var masterSong: ((Song) -> Void)? = nil
+    var editSong: ((Song) -> Void)? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .firstTextBaseline) {
@@ -17,8 +18,9 @@ struct SongWorkspace: View {
                 Spacer(minLength: 8)
                 if let song, song.status == .ready {
                     Menu {
-                        Button("Export lossless FLAC…") { ExportService.choose(song: song, title: library.title(song), wav: false) { library.notice = $0 } }
-                        Button("Export WAV…") { ExportService.choose(song: song, title: library.title(song), wav: true) { library.notice = $0 } }
+                        ForEach(AudioExportFormat.allCases) { format in
+                            Button(format.title + "…") { ExportService.choose(song: song, title: library.title(song), format: format) { library.notice = $0 } }
+                        }
                         Divider()
                         Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: song.path)]) }
                     } label: { Label("Export", systemImage: "square.and.arrow.up") }.menuStyle(.borderlessButton).fixedSize()
@@ -63,6 +65,9 @@ struct SongWorkspace: View {
                     Text("32 steps · full composition · lossless stereo").font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
+                if let song, song.status == .ready, let editSong {
+                    Button("Edit", systemImage: "waveform.path") { player.pause(); editSong(song) }.disabled(backend.busy || backend.masteringActive)
+                }
                 if let song, song.status == .ready, let masterSong {
                     Button("Master this song", systemImage: "slider.horizontal.3") { player.pause(); masterSong(song) }
                         .disabled(backend.busy || backend.masteringActive).help("Optional: polish this recording with Studio Mastering. Your original is preserved.")

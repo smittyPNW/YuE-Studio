@@ -7,7 +7,7 @@
 
 [[redirects]]
   from = "/download"
-  to = "/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg"
+  to = "/downloads/YuE-Studio-0.5.0-Apple-Silicon.dmg"
   status = 302
 
 [[redirects]]
@@ -27,7 +27,7 @@
   for = "/downloads/*.dmg"
   [headers.values]
     Content-Type = "application/x-apple-diskimage"
-    Content-Disposition = "attachment; filename=YuE-Studio-0.4.0-Apple-Silicon.dmg"
+    Content-Disposition = "attachment; filename=YuE-Studio-0.5.0-Apple-Silicon.dmg"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]

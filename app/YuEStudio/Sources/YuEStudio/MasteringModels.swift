@@ -33,6 +33,16 @@ struct MasterParameters: Codable, Equatable {
         result.ceilingDb = min(ceilingDb, -1); result.useTruePeak = true
         return result
     }
+    /// Whole-song measured loudness; the renderer retains its 3 dB peak-reduction
+    /// budget, so very dynamic material may finish below the requested target.
+    func maxVolume() -> MasterParameters {
+        var result = self
+        result.targetLufs = -9; result.loudnessPreset = 1
+        result.normalizeActive = true; result.normalizeGainDb = 0
+        result.useTruePeak = true; result.ceilingDb = min(ceilingDb, -1)
+        result.masterVolDb = 0; result.finalCharacter = 0
+        return result
+    }
     var dictionary: [String:Any] { (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(self)) as? [String:Any]) ?? [:] }
 }
 struct MasterMeasurement: Codable, Equatable {

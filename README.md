@@ -13,7 +13,7 @@
 
 **Give a song its words and musical direction. YuE2 turns them into a composition and full stereo audio, locally on your Mac.** Keep your lyrics, versions, playback, and exports together in a warm native SwiftUI workspace.
 
-[Visit the website](https://yue-studio.netlify.app) · [Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
+[Visit the website](https://yue-studio.netlify.app) · [Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.0/YuE-Studio-0.5.0-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
 
 > **Community edition:** generation and the complete Studio Mastering engine are included in source. Shared for the love of music and AI. YuE2 model weights download separately and retain their [noncommercial license](MODEL_LICENSE).
 
@@ -23,8 +23,9 @@
 - **Keep the full render.** New songs use 32-step synthesis and full composition planning. The interface does not trade quality for speed.
 - **Listen and keep versions.** A persistent player, waveform, favorites, and a song library keep your work close. Existing drafts can be compared with full renders.
 - **Recover useful work.** Saved generation artifacts support recovery and full-quality rerendering. Failed jobs remain visible rather than disappearing.
+- **Edit the recording.** A third workspace adds sample-level selection, cutting and arrangement, fades, crossfades, gain ramps, repair and channel tools, markers, frequency analysis, and persistent undo/redo. Open external recordings or send a generated song directly to Edit. [Editing guide](docs/AUDIO-EDITING.md).
 - **Finish optionally.** Send a finished song to Master—or import a separate recording without generating anything.
-- **One heavy job at a time.** Generation and mastering share an admission gate and file lock. The generation worker exits before mastering begins.
+- **One heavy job at a time.** Generation, editor processing, and mastering share an admission gate and file lock. The generation worker exits before mastering begins.
 - **Clear space safely.** Move song projects or mastering sessions to the Mac Trash. Restore them with Finder’s Put Back; exported copies and imported originals stay in place.
 - **Keep your originals.** Mastering uses private source copies and separate rendered versions. Export refuses to replace existing audio.
 
@@ -34,11 +35,15 @@
 
 ![Real YuE Studio song-creation screenshot](docs/screenshots/create-dark.png)
 
+### Edit · dark
+
+![Native YuE Studio editing workspace with a real recording](docs/screenshots/edit-dark.png)
+
 ### Master · light
 
 ![Real Studio Mastering screenshot](docs/screenshots/master-light.png)
 
-*Studio Mastering includes Smart Master, 43 starting styles, Before/After listening, and the iOS-inspired **HiFi · Fix Stereo · More Bass · Clear Mids · Smooth Highs** buttons. Fixes update editable settings; they never silently process a song.*
+*Studio Mastering includes Smart Master, 43 starting styles, Before/After listening, and the iOS-inspired **HiFi · Max Volume · Fix Stereo · More Bass · Clear Mids · Smooth Highs** buttons. Fixes update editable settings; they never silently process a song.*
 
 <details><summary>Master · dark</summary>
 
@@ -46,11 +51,11 @@
 
 </details>
 
-The screenshots are direct captures. Campaign images are imagegen artwork based on those captures and are not pixel-perfect UI documentation.
+The current Create, Edit and light Master images are deterministic captures of the actual native SwiftUI views with existing recordings; the older dark Master image is a direct app capture. Campaign images are imagegen artwork based on those captures and are not pixel-perfect UI documentation.
 
 ## Install it
 
-Download the **[Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg)**, drag YuE Studio to Applications, then open the installed app. Requires macOS 14 or later on an M-series Mac. The app and disk image are Developer ID signed, Apple-notarized and stapled.
+Download the **[Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.0/YuE-Studio-0.5.0-Apple-Silicon.dmg)**, drag YuE Studio to Applications, then open the installed app. Requires macOS 14 or later on an M-series Mac. The app and disk image are Developer ID signed, Apple-notarized and stapled.
 
 **Mastering is ready immediately.** Choose Master and import your recording. Song generation uses a separate, one-time [runtime and model setup](docs/SETUP.md#generation-runtime); existing YuE Studio runtimes are reused. Model weights are not inside the DMG. No automatic updater is included.
 
@@ -58,7 +63,7 @@ Download the **[Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/relea
 
 ## Build from source
 
-Apple Silicon Mac, macOS 14+, Xcode command-line tools with Swift, CMake and Ninja (`brew install cmake ninja`), and [uv](https://docs.astral.sh/uv/) for the optional generation runtime. Development and full-song validation used an **M4 Pro Mac mini with 24 GB unified memory**. Other machines and minimum-memory limits have not been validated for this edition.
+Apple Silicon Mac, macOS 14+, Xcode command-line tools with Swift, CMake and Ninja (`brew install cmake ninja pkgconf`), and [uv](https://docs.astral.sh/uv/) for the optional generation runtime. Development and full-song validation used an **M4 Pro Mac mini with 24 GB unified memory**. Other machines and minimum-memory limits have not been validated for this edition.
 
 ```bash
 git clone https://github.com/smittyPNW/YuE-Studio.git

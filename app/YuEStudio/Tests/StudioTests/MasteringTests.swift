@@ -7,8 +7,10 @@ final class MasteringTests: XCTestCase {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let source = folder.appendingPathComponent("current.wav"), other = folder.appendingPathComponent("other-session.wav"), delivery = folder.appendingPathComponent("new.wav")
-        let original = Data("another session's original".utf8), mastered = Data("verified master bytes".utf8)
-        try original.write(to: other); try mastered.write(to: source)
+        let original = Data("another session's original".utf8)
+        try TestAudio.write(source, seconds: 0.1)
+        let mastered = try Data(contentsOf: source)
+        try original.write(to: other)
         XCTAssertThrowsError(try ExportService.exportMaster(source: source, destination: other))
         XCTAssertThrowsError(try ExportService.exportMaster(source: source, destination: source))
         XCTAssertEqual(try Data(contentsOf: other), original)

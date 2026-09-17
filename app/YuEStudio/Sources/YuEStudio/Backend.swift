@@ -201,7 +201,7 @@ final class Backend: ObservableObject {
 
     /// Queue a run; the worker announces its songs with a "started" event.
     func generate(title: String, style: String, lyrics: String, cot: String, seed: Int, randomSeed: Bool, batch: Int, maxTokens: Int, engine: String, abc: String, quality: String, instrumental: Bool) {
-        guard !masteringActive, connected else { lastError = "Finish mastering before starting music generation."; return }
+        guard !masteringActive, connected else { lastError = "Finish the current editing or mastering job before starting music generation."; return }
         generationReserved = true; pendingGenerations += 1; updateBusy()
         send(["cmd": "generate", "title": title, "style": style, "lyrics": lyrics, "cot": cot, "seed": seed, "random_seed": randomSeed,
               "batch": batch, "max_tokens": maxTokens, "engine": engine, "abc": abc, "quality": quality, "instrumental": instrumental])
@@ -221,8 +221,10 @@ final class Backend: ObservableObject {
     /// Reserve the entire audio workstation before releasing the model process.
     /// The helper also takes the same flock as the Python worker across app copies.
     func beginMastering() async throws {
-        guard !busy, !masteringActive else { throw StudioFailure("Wait for the current song or mastering job to finish.") }
+        guard !busy, !masteringActive else { throw StudioFailure("Wait for the current audio job to finish.") }
         masteringActive = true
+        var acquired = false
+        defer { if !acquired { masteringActive = false } }
         if let p = process {
             send(["cmd": "quit"])
             connected = false
@@ -235,7 +237,8 @@ final class Backend: ObservableObject {
             if process === p { process = nil; stdin = nil }
         }
         buffer = Data()
-        memoryMessage = "Music models released for mastering"
+        memoryMessage = "Music models released for audio processing"
+        acquired = true
     }
     func endMastering() { masteringActive = false }
 
