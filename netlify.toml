@@ -1,0 +1,36 @@
+[build]
+  command = "node site/build.mjs"
+  publish = "site/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/download"
+  to = "/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg"
+  status = 302
+
+[[redirects]]
+  from = "/github"
+  to = "https://github.com/smittyPNW/YuE-Studio"
+  status = 302
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/downloads/*.dmg"
+  [headers.values]
+    Content-Type = "application/x-apple-diskimage"
+    Content-Disposition = "attachment; filename=YuE-Studio-0.4.0-Apple-Silicon.dmg"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

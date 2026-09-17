@@ -13,7 +13,7 @@
 
 **Give a song its words and musical direction. YuE2 turns them into a composition and full stereo audio, locally on your Mac.** Keep your lyrics, versions, playback, and exports together in a warm native SwiftUI workspace.
 
-[Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
+[Visit the website](https://yue-studio.netlify.app) · [Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
 
 > **Community edition:** generation and the complete Studio Mastering engine are included in source. Shared for the love of music and AI. YuE2 model weights download separately and retain their [noncommercial license](MODEL_LICENSE).
 

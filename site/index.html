@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YuE Studio — For the love of music.</title>
+  <meta name="description" content="Create songs locally. Master a mix beautifully. Download YuE Studio, a native music app for Apple Silicon, shared for the love of music and AI.">
+  <meta name="theme-color" content="#f5f0e3">
+  <link rel="canonical" href="https://yue-studio.netlify.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="YuE Studio — For the love of music.">
+  <meta property="og:description" content="Your words. Your sound. A native studio for local AI music creation and independent mastering on Mac.">
+  <meta property="og:url" content="https://yue-studio.netlify.app/">
+  <meta property="og:image" content="https://yue-studio.netlify.app/assets/social.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/icon.webp" type="image/webp">
+  <link rel="preload" href="/assets/fonts/barlow-condensed-semibold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<!-- THESIS: A generous record sleeve for a native music studio.
+OWN-WORLD: Orange tuning fork, ivory paper, charcoal ink, tactile vinyl and speaker photography, authentic app screens.
+STORY: Feel the invitation; see the studio; choose Create or Master; download and understand setup; meet the open-source project.
+FIRST VIEWPORT: Clear identity and download, condensed music-poster headline, full-width orange photography/app triptych.
+FORM: Community liner notes, candidate 6, seed d90cfd60; option B chosen under the owner's design delegation.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header wrap">
+    <a class="brand" href="/" aria-label="YuE Studio home"><img src="/assets/icon.webp" width="40" height="40" alt=""><span>YuE Studio</span></a>
+    <nav aria-label="Main navigation"><a href="#studio">The studio</a><a href="#get-started">Get started</a><a href="https://github.com/smittyPNW/YuE-Studio">GitHub</a></nav>
+    <a class="button button-small" href="/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg" download>Download <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v4h14v-4"/></svg></a>
+  </header>
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-heading wrap"><h1 id="hero-title">For the <em>love</em><br>of music.</h1><p>Your words. Your sound. <br>A native Mac studio for local AI song creation and independent mastering. Shared with the music community.</p></div>
+      <div class="triptych" aria-label="YuE Studio surrounded by music-inspired campaign artwork">
+        <img class="material vinyl" src="/assets/vinyl.webp" width="660" height="880" alt="" fetchpriority="high">
+        <div class="hero-screen"><img src="/assets/create-dark.webp" width="1108" height="768" alt="The real YuE Studio app: lyrics, musical direction and song library in the Create workspace" fetchpriority="high"></div>
+        <img class="material speaker" src="/assets/speaker.webp" width="660" height="880" alt="">
+      </div>
+      <div class="download-band wrap">
+        <div><h2>Create songs locally.<br>Master a mix beautifully.</h2><p>Start with a lyric and a musical direction, or bring a recording of your own. Make room for whatever comes next.</p></div>
+        <div class="download-actions"><a class="button" href="/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg" download>Download for Mac <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v4h14v-4"/></svg></a><p class="release-meta">v0.4.0 · 9.7 MB · Apple Silicon · macOS 14+</p><p class="setup-note">Mastering is ready to go. Song creation requires <a href="https://github.com/smittyPNW/YuE-Studio/blob/main/docs/SETUP.md#generation-runtime">one-time model setup</a>.</p><a class="text-link" href="https://github.com/smittyPNW/YuE-Studio">Explore the source on GitHub <svg class="external-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+      </div>
+    </section>
+
+    <section class="studio-section" id="studio" aria-labelledby="studio-title">
+      <div class="wrap">
+        <div class="studio-heading"><h2 id="studio-title">Two ways<br>into the music.</h2><p>Create something from an idea. Give a finished mix your final touch. Each has its own space, and you decide where to begin.</p></div>
+        <div class="studio-switcher" data-studio-switcher>
+          <div class="tab-list" aria-label="Explore the studio"><button id="create-tab" type="button" aria-controls="create-panel">Create a song</button><button id="master-tab" type="button" aria-controls="master-panel">Master a recording</button></div>
+          <section class="studio-panel" id="create-panel" aria-labelledby="create-tab">
+            <div class="panel-copy"><h3>A phrase becomes<br>a whole world.</h3><p>Give YuE2 your lyrics and a musical style. Shape verses, choruses and bridges, then render full stereo audio on your Mac.</p><ul><li>Full composition planning and 32-step synthesis</li><li>Lyrics, playback and versions in one place</li><li>Lossless exports and saved work for recovery</li></ul><a class="text-link" href="https://github.com/smittyPNW/YuE-Studio/blob/main/docs/PROMPTING.md">Find your musical direction <svg class="external-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+            <figure><img src="/assets/create-dark.webp" width="1108" height="768" alt="Create workspace showing musical direction, structured lyrics and a saved song library" loading="lazy"><figcaption>YuE Studio · Create · actual app</figcaption></figure>
+          </section>
+          <section class="studio-panel" id="master-panel" aria-labelledby="master-tab">
+            <div class="panel-copy"><h3>The finishing touch.<br>On your terms.</h3><p>Drop in your own recording or bring over a generated song. Start with Smart Master or one of 43 styles, then listen, adjust and compare.</p><ul><li>HiFi, More Bass, Clear Mids and more Quick Fixes</li><li>Before/After listening with loudness matching</li><li>Separate 24-bit WAV masters; originals preserved</li></ul><a class="text-link" href="https://github.com/smittyPNW/YuE-Studio/blob/main/docs/HIFI.md">Inside the HiFi setting <svg class="external-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+            <figure><img src="/assets/master-light.webp" width="1108" height="768" alt="Studio Mastering workspace with HiFi and Quick Fix controls, style selection and Before/After listening" loading="lazy"><figcaption>YuE Studio · Studio Mastering · actual app</figcaption></figure>
+          </section>
+        </div>
+        <div class="studio-footnote"><p>Good sound deserves the time it takes.</p><p>Full quality comes first. Generation and mastering run one at a time, keeping your Mac focused on the music.</p></div>
+      </div>
+    </section>
+
+    <section class="start-section wrap" id="get-started" aria-labelledby="start-title">
+      <div class="section-intro"><h2 id="start-title">Your next session<br>starts here.</h2><p>A small download. A real native app.<br>Choose the tools you want to use.</p></div>
+      <ol class="setup-steps">
+        <li><h3>Make it at home.</h3><p><a href="/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg" download>Download the DMG</a>, open it, and drag YuE Studio into Applications. The app and installer are signed and Apple-notarized.</p></li>
+        <li><h3>Bring a recording.</h3><p>Open Master and import a mix. The mastering tools are included—no model downloads required. Every rendered master gets its own version.</p></li>
+        <li><h3>Or build a song.</h3><p>Follow the <a href="https://github.com/smittyPNW/YuE-Studio/blob/main/docs/SETUP.md#generation-runtime">generation setup guide</a> to install the runtime and several GB of models. Then add your lyrics and style in Create.</p></li>
+      </ol>
+      <div class="download-detail"><span>Made for M-series Macs running macOS 14 or newer.</span><a href="/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg.sha256">Verify the download checksum</a><a href="https://github.com/smittyPNW/YuE-Studio/releases/tag/v0.4.0">Release notes</a></div>
+    </section>
+
+    <section class="questions wrap" aria-labelledby="questions-title">
+      <h2 id="questions-title">Before you press play.</h2>
+      <div class="question-list">
+        <details><summary>Will it download the models automatically?</summary><p>The current app does not automatically download models. The DMG includes the app and mastering engine; song generation needs the separate, one-time <a href="https://github.com/smittyPNW/YuE-Studio/blob/main/docs/SETUP.md#generation-runtime">runtime setup script</a>. That script downloads the Python dependencies and model weights. Keep the setup checkout in place. Existing compatible YuE Studio runtimes are reused.</p></details>
+        <details><summary>Will it run on my Mac?</summary><p>The app requires Apple Silicon and macOS 14 or newer. Development and full-song validation used an M4 Pro Mac mini with 24 GB of unified memory. Other configurations and minimum generation-memory limits have not been validated for this edition. Generation time and memory use depend on the song and hardware.</p></details>
+        <details><summary>Can I use it just for mastering?</summary><p>Absolutely. Open Master and import your recording. You never have to generate a song or install the generation models. Mastering creates separate versions and preserves your imported original. HiFi and the other Quick Fixes change editable settings; you choose when to render.</p></details>
+        <details><summary>Is it free? What about the licenses?</summary><p>The app is free to download. Studio and generation code is Apache-2.0; the included Studio Mastering engine is AGPL-3.0-only. The YuE2 model weights have a separate <a href="https://github.com/smittyPNW/YuE-Studio/blob/main/MODEL_LICENSE">noncommercial license</a>. Please read the <a href="https://github.com/smittyPNW/YuE-Studio/blob/main/CREDITS.md">credits and license details</a> before using or redistributing the project.</p></details>
+        <details><summary>Does the music stay on my Mac?</summary><p>Generation and mastering process audio locally. Initial setup needs internet access to download dependencies and models. The app does not require a paid cloud-generation service or an account. This website has no analytics or sign-up form.</p></details>
+      </div>
+    </section>
+
+    <section class="community" aria-labelledby="community-title"><div class="wrap community-inner"><div><h2 id="community-title">Music is better<br>when we share.</h2><p>Built for curious people with songs in their heads. Shared for the love of music, and what AI can help us make. Try it. Shape it. Make something that sounds like you.</p></div><div class="community-actions"><a class="button button-light" href="/downloads/YuE-Studio-0.4.0-Apple-Silicon.dmg" download>Get YuE Studio <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v4h14v-4"/></svg></a><a class="text-link" href="https://github.com/smittyPNW/YuE-Studio">Build with us on GitHub <svg class="external-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div></div></section>
+  </main>
+  <footer class="site-footer wrap"><div class="footer-top"><a class="brand" href="/"><img src="/assets/icon.webp" width="36" height="36" alt=""><span>YuE Studio</span></a><a href="https://github.com/smittyPNW/YuE-Studio/issues">Feedback &amp; issues</a><a href="https://github.com/smittyPNW/YuE-Studio/blob/main/CONTRIBUTING.md">Contribute</a><a href="https://github.com/smittyPNW/YuE-Studio/blob/main/CREDITS.md">Credits &amp; licenses</a></div><p class="credits">Built on <a href="https://github.com/tonywestonuk/YuE-Studio">Tony Weston’s YuE Studio</a> and <a href="https://github.com/multimodal-art-projection/YuE">YuE2 by M·A·P and collaborators</a>. With gratitude to the people who made local music generation possible.</p><p class="fine-print">Community edition · Source available · Music made locally<br>App images are real screenshots. Vinyl and speaker images are AI-generated campaign artwork.</p></footer>
+</body>
+</html>

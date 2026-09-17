@@ -1,0 +1,11 @@
+# Campaign artwork
+
+Original AI-generated vinyl and speaker imagery created with OpenAI ImageGen for this website. App screenshots depict the real YuE Studio interface. Fonts: Barlow and Barlow Condensed, SIL Open Font License (see fonts/OFL.txt).
+
+## Vinyl prompt
+
+Use case: ads-marketing. Asset type: original website campaign photograph, portrait 3:4. Primary request: an extreme close-up of a black vinyl record with a beautifully tactile burnt-orange paper center label, in the ivory/orange/charcoal music-studio world of the reference website comp. The reference is composition and material guidance only; generate this as a NEW full-resolution photo asset, not a website screenshot and not cropped pixels. Fill the entire frame with the record, deep fine circular grooves and a large orange label coming in from the left bottom edge, center spindle hole near lower left third. Restrained natural side light catches black ridges, analog editorial music photography, refined and tangible, rich warm black rather than gray, no harsh glossy CGI, no gradients as decoration. NO words, logos, watermarks, UI, frame, or typography. Keep orange close to #be4313 with natural paper texture. Output one single full-bleed photographic image.
+
+## Speaker prompt
+
+Use case: ads-marketing. Asset type: original website campaign photograph, portrait 3:4. Primary request: a beautiful extreme macro photograph of a vintage studio loudspeaker, with charcoal black textured housing and a burnt-orange woven paper cone, in the ivory/orange/charcoal music-studio world of the reference website comp. Reference is composition and material guidance only; generate NEW full-resolution photograph, not a website screenshot or cropped pixels. Fill whole portrait frame with the left edge of a large circular speaker cone entering from right; detailed concentric black flexible surround, warm rust orange fine-fiber diaphragm, black dust cap partially visible near right center, one understated metal mounting screw in top left. Sculptural side light, realistic analog material, elegant dark tonal contrast, no neon, no glossy CGI. NO words, logos, watermark, UI, frame, or typography. Output one single full-bleed photographic image.
