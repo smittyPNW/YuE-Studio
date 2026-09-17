@@ -1,0 +1,4 @@
+interface:
+  display_name: "YuE2 Songwriter"
+  short_description: "Turn song ideas into YuE Studio lyrics and style"
+  default_prompt: "Use $yue2-songwriter to turn my song idea or hook into complete lyrics and a matching style prompt for YuE Studio."
