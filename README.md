@@ -13,7 +13,7 @@
 
 **Give a song its words and musical direction. YuE2 turns them into a composition and full stereo audio, locally on your Mac.** Keep your lyrics, versions, playback, and exports together in a warm native SwiftUI workspace.
 
-[Visit the website](https://yue-studio.netlify.app) · [Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.0/YuE-Studio-0.5.0-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
+[Visit the website](https://yue-studio.netlify.app) · [Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.1/YuE-Studio-0.5.1-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
 
 > **Community edition:** generation and the complete Studio Mastering engine are included in source. Shared for the love of music and AI. YuE2 model weights download separately and retain their [noncommercial license](MODEL_LICENSE).
 
@@ -58,7 +58,7 @@ The current Create, Edit and light Master images are deterministic captures of t
 
 ## Install it
 
-Download the **[Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.0/YuE-Studio-0.5.0-Apple-Silicon.dmg)**, drag YuE Studio to Applications, then open the installed app. Requires macOS 14 or later on an M-series Mac. The app and disk image are Developer ID signed, Apple-notarized and stapled.
+Download the **[Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.1/YuE-Studio-0.5.1-Apple-Silicon.dmg)**, drag YuE Studio to Applications, then open the installed app. Requires macOS 14 or later on an M-series Mac. The app and disk image are Developer ID signed, Apple-notarized and stapled.
 
 **Mastering is ready immediately.** Choose Master and import your recording. Song generation uses a separate, one-time [runtime and model setup](docs/SETUP.md#generation-runtime); existing YuE Studio runtimes are reused. Model weights are not inside the DMG. No automatic updater is included.
 
