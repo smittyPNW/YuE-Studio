@@ -15,7 +15,7 @@ Verified locally on the same M4 Pro Mac mini with 24 GB unified memory:
 - Installed-app MP3 exports from both Master and Create produced complete 294.198667-second stereo 48 kHz files at 320,000 bits per second. A separate full-song encoder check retained approximately −14 LUFS / −2 dBTP, matching source loudness. The codec matrix also verifies decoded listening level and 96-to-48 kHz MP3 conversion. The bundled helper targets macOS 14 and links only Apple system libraries; no Homebrew runtime is needed.
 - Public-tree guard and whitespace checks passed. No new songs were generated, model settings were unchanged, and existing session settings were restored after UI checks.
 
-The latest 0.4.1 MP3 app is a local ad-hoc signed update. It has not been notarized or published as a new DMG. Public download links and website still refer to 0.4.0. This audit does not claim testing on another Mac or a fresh model/runtime installation.
+At the time of the 0.4.1 audit, the MP3 app was a local ad-hoc signed update and public downloads still referred to 0.4.0. Version 0.5.0 includes these changes in the signed, notarized installer described below. This audit does not claim testing on another Mac or a fresh model/runtime installation.
 
 ## Community edition 0.4.0
 
@@ -48,6 +48,8 @@ Generation runtime/models are still separate; no fresh runtime installation on a
 Local verification on Apple Silicon, 2026-09-17:
 
 - 36 Swift tests passed with the existing-recording and native-view snapshot fixtures enabled; 15 Python tests passed. No song generation was used.
+- GitHub Actions on macOS 14 passed the public-tree check, production app build, 15 Python tests, 36 Swift tests (two optional local-audio/snapshot fixtures skipped), and installer packaging. Explicit main-actor isolation keeps the editor views compatible with that older Swift toolchain.
+- The final Developer ID signed, notarized app (0.5.0, build 20260917.2) was installed at the established application path. Strict signature, staple validation and Gatekeeper checks passed; the Desktop alias and Dock destination were preserved.
 - Full 294.199-second stereo recording round trip: every decoded Float32 sample and the original source bytes were unchanged.
 - Cut/split/paste/trim/reorder, ripple marker positions, saved undo/redo, reverse across block boundaries, fades, gain ramp, normalization, DC/silence/channel operations, click-repair bounds, crossfade duration, filter response and spectrum-channel handling were exercised with deterministic signals.
 - Playback stopped at the selected frame boundary and looped within that range, using the native audio engine with monitoring muted for the test.
@@ -57,4 +59,4 @@ Local verification on Apple Silicon, 2026-09-17:
 
 Run ordinary checks with `swift test --package-path app/YuEStudio`. To include an owned existing recording, set `YUE_EDITOR_TEST_AUDIO` to its path. To write native-view snapshots, also set `YUE_EDITOR_SNAPSHOT_DIR` to a local output directory. Audio and local paths are not committed.
 
-Release 0.5.0 installer: Developer ID signing, app and DMG notarization/stapling, mounted-app signature checks, helper catalog execution, DMG verification and Gatekeeper assessments all passed. SHA-256: `6d0396457b129d62005909c5fd8405a1b16078be0b28330cb9dbd77083317425`.
+Release 0.5.0 installer: Developer ID signing, app and DMG notarization/stapling, mounted-app signature checks, helper catalog execution, DMG verification and Gatekeeper assessments all passed. SHA-256: `ffb3baa32630b376deb70316ee53b8bcd34710780f2c849cb78ab450af18e95d`.
