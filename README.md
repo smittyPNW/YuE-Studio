@@ -19,6 +19,8 @@
 
 ## Make room for the music
 
+**Start with an idea or a hook.** The optional [YuE2 Songwriter companion](docs/SONGWRITER.md) helps an AI assistant write complete lyrics and a matching musical direction for Studio. It includes source-backed guidance on [key, time signature, BPM, solos and instrumental breaks](skills/yue2-songwriter/references/composition-controls.md), with clear distinctions between text requests and score controls.
+
 - **Write with structure.** Separate musical direction from lyrics; jump between verse, chorus, bridge, and other section markers.
 - **Keep the full render.** New songs use 32-step synthesis and full composition planning. The interface does not trade quality for speed.
 - **Listen and keep versions.** A persistent player, waveform, favorites, and a song library keep your work close. Existing drafts can be compared with full renders.

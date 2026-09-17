@@ -2,6 +2,8 @@
 
 YuE2’s documented inputs separate `style` from `lyrics`. Put genre, instruments, language, tempo and vocal character in musical direction; put singable words and section tags in lyrics. Keep production requests out of sung lines.
 
+For a complete writing workflow, use the optional [Songwriter companion](SONGWRITER.md). For key, meter, tempo, chord progressions and precisely placed instrumental passages, read its [composition-control reference](../skills/yue2-songwriter/references/composition-controls.md). Text communicates intent; a validated Custom score (ABC) specifies the symbolic composition.
+
 ## Practical starting point
 
 **Musical direction**
