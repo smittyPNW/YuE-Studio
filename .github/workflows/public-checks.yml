@@ -8,7 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/check-public-tree.py
-      - run: brew install cmake ninja
+      - run: brew install cmake ninja uv
       - run: bash custom/package-local.sh
       - run: python3 -m unittest discover -s custom/Tests -v
       - run: swift test --package-path app/YuEStudio
+      - run: bash custom/package-dmg.sh

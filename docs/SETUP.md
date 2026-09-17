@@ -1,6 +1,16 @@
-# Build and run
+# Install, set up and build
 
-## Requirements
+## Download the app
+
+Download the [Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg), open it and drag YuE Studio to Applications. Launch the installed app, then eject the disk image. If another edition is installed, close it and preserve its bundle before replacing it. Your libraries are stored outside the application.
+
+The download is Developer ID signed and Apple-notarized, with tickets stapled to both the app and disk image. It supports Apple Silicon and macOS 14+. The release includes a SHA-256 checksum file. The icon is bundled; pin the installed app in the Dock.
+
+**For mastering only, no developer tools, Python or models are required.** Open the app, choose Master and import a recording. If you see a missing-generation-runtime message, dismiss it and switch to Master.
+
+For song generation, complete the runtime setup below. A working existing runtime is used automatically. Model weights are not bundled with the download.
+
+## Requirements for building or generation setup
 
 - Apple Silicon Mac running macOS 14 or later.
 - Xcode command-line tools (`xcode-select --install`) and Swift 5.9 or newer.
@@ -12,6 +22,16 @@
 ## Generation runtime
 
 Run `bash scripts/setup-runtime.sh` from the repository root. It installs a Python 3.12 environment under `~/Library/Application Support/YuE Studio/env` and downloads the upstream YuE2 generation/listening models to the corresponding `models` folder. Read `MODEL_LICENSE` before using those weights.
+
+If you installed the DMG and do not have a source checkout yet:
+
+```bash
+git clone --branch v0.4.0 https://github.com/smittyPNW/YuE-Studio.git
+cd YuE-Studio
+bash scripts/setup-runtime.sh
+```
+
+Install `uv` and the Xcode command-line tools first, as listed above. You do not need CMake, Ninja or an app rebuild when using the downloaded app. Quit and reopen YuE Studio after setup finishes.
 
 An existing environment is not replaced. The script will say so and exit. Do not remove or repair a working runtime while the app is generating. Because the source is installed in editable mode, retain this checkout at the same location. Moving it requires reinstalling the package into the environment after all jobs finish.
 
@@ -29,7 +49,7 @@ Open `custom/dist/YuE Studio.app`. Copy it to Applications only after closing an
 
 The icon is included in the signed bundle. A Finder alias to the installed application will keep the same icon; pin that installed application in the Dock rather than a transient build path.
 
-The package is ad-hoc signed, not notarized. This repository does not provide a one-click notarized download or automatic updater.
+This local build is ad-hoc signed by default. The separately published DMG is Developer ID signed and notarized. There is no automatic updater. To package your own disk image, see [distribution](DISTRIBUTION.md).
 
 ## Optional mastering
 

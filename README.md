@@ -13,7 +13,7 @@
 
 **Give a song its words and musical direction. YuE2 turns them into a composition and full stereo audio, locally on your Mac.** Keep your lyrics, versions, playback, and exports together in a warm native SwiftUI workspace.
 
-[Build & setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Mastering integration](mastering/README.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
+[Download for Mac](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg) · [Setup](docs/SETUP.md) · [Prompting, breaks & solos](docs/PROMPTING.md) · [Releases](https://github.com/smittyPNW/YuE-Studio/releases)
 
 > **Community edition:** generation and the complete Studio Mastering engine are included in source. Shared for the love of music and AI. YuE2 model weights download separately and retain their [noncommercial license](MODEL_LICENSE).
 
@@ -48,7 +48,15 @@
 
 The screenshots are direct captures. Campaign images are imagegen artwork based on those captures and are not pixel-perfect UI documentation.
 
-## Build it
+## Install it
+
+Download the **[Apple Silicon DMG](https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/YuE-Studio-0.4.0-Apple-Silicon.dmg)**, drag YuE Studio to Applications, then open the installed app. Requires macOS 14 or later on an M-series Mac. The app and disk image are Developer ID signed, Apple-notarized and stapled.
+
+**Mastering is ready immediately.** Choose Master and import your recording. Song generation uses a separate, one-time [runtime and model setup](docs/SETUP.md#generation-runtime); existing YuE Studio runtimes are reused. Model weights are not inside the DMG. No automatic updater is included.
+
+![The drag-to-Applications disk image](docs/screenshots/installer.png)
+
+## Build from source
 
 Apple Silicon Mac, macOS 14+, Xcode command-line tools with Swift, CMake and Ninja (`brew install cmake ninja`), and [uv](https://docs.astral.sh/uv/) for the optional generation runtime. Development and full-song validation used an **M4 Pro Mac mini with 24 GB unified memory**. Other machines and minimum-memory limits have not been validated for this edition.
 
@@ -61,7 +69,7 @@ bash custom/package-local.sh
 
 The bundle is written to `custom/dist/YuE Studio.app`. Runtime setup downloads Python dependencies and several GB of model weights. An existing YuE runtime is left untouched. Keep this checkout in place because setup installs the Python package in editable mode. Read [the setup guide](docs/SETUP.md) before installing alongside another YuE Studio edition.
 
-This release is source-first. Local builds are ad-hoc signed; no notarized installer is supplied. No model weights, generated songs, personal libraries or commercial-app assets are distributed. The build fetches a pinned JUCE revision and compiles the included mastering source.
+Local source builds are ad-hoc signed by default; the published DMG is separately Developer ID signed and notarized. No model weights, generated songs, personal libraries or commercial-app assets are distributed. The build fetches a pinned JUCE revision and compiles the included mastering source. [DMG packaging instructions](docs/DISTRIBUTION.md).
 
 ## Mastering, by choice
 

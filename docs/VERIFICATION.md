@@ -22,4 +22,6 @@ New generation still requests full composition planning, GPU MLX, 32 synthesis s
 
 Studio Mastering source and presets are now intentionally included under AGPL-3.0-only. The commercial app's remaining source, private development history, personal libraries, audio, model weights, credentials and signing assets are excluded. A public-tree guard and a separate Gitleaks scan run before publishing. Automated scans are one check, not a mathematical guarantee of absence.
 
-Local bundles are ad-hoc signed. No notarized installer or automatic updater is supplied.
+Local builds remain ad-hoc signed by default. The 0.4.0 downloadable app and DMG are separately Developer ID signed, Apple-notarized and stapled. Packaging uses the existing 0.4.0 app executable and helper, then applies distribution signatures. The mounted image passed strict app-signature and staple validation; Gatekeeper accepted both app and image. All seven mastering-engine tests passed against the signed helper inside the image. The copied app opened with the existing library and its Desktop alias/icon intact. The installer layout was inspected in Finder.
+
+Generation runtime/models are still separate; no fresh runtime installation on a different Mac was performed. There is no automatic updater. See [distribution](DISTRIBUTION.md) for the repeatable packaging and verification steps.

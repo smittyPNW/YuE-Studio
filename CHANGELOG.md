@@ -2,6 +2,7 @@
 
 ## 0.4.0 — Community mastering
 
+- Added a Developer ID signed, notarized Apple Silicon DMG with a branded drag-to-Applications layout and getting-started guide. Generation models remain a separate setup.
 - Studio Mastering engine, DSP and 43-style catalog now included under AGPL-3.0-only, with pinned JUCE build.
 - HiFi quick fix: restrained bass weight, clarity and air, with non-stacking settings and Undo.
 - Move song projects and mastering sessions to the Mac Trash; preserve external originals and exports, recover settings with Put Back.
