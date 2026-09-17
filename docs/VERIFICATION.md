@@ -56,3 +56,5 @@ Local verification on Apple Silicon, 2026-09-17:
 - Public release gates additionally require source/secret scanning, Developer ID signing, Apple notarization/stapling, mounted-DMG verification, and matching public download checksums.
 
 Run ordinary checks with `swift test --package-path app/YuEStudio`. To include an owned existing recording, set `YUE_EDITOR_TEST_AUDIO` to its path. To write native-view snapshots, also set `YUE_EDITOR_SNAPSHOT_DIR` to a local output directory. Audio and local paths are not committed.
+
+Release 0.5.0 installer: Developer ID signing, app and DMG notarization/stapling, mounted-app signature checks, helper catalog execution, DMG verification and Gatekeeper assessments all passed. SHA-256: `6d0396457b129d62005909c5fd8405a1b16078be0b28330cb9dbd77083317425`.

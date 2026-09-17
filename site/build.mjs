@@ -5,9 +5,9 @@ import path from 'node:path';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const out = path.join(root, 'dist');
-const name = 'YuE-Studio-0.4.0-Apple-Silicon.dmg';
-const sha256 = '194ced5086f6f0bde945fcd83209d880701eaa00a8b8a812050be11521347ad2';
-const release = `https://github.com/smittyPNW/YuE-Studio/releases/download/v0.4.0/${name}`;
+const name = 'YuE-Studio-0.5.0-Apple-Silicon.dmg';
+const sha256 = '6d0396457b129d62005909c5fd8405a1b16078be0b28330cb9dbd77083317425';
+const release = `https://github.com/smittyPNW/YuE-Studio/releases/download/v0.5.0/${name}`;
 await mkdir(path.join(out, 'downloads'), { recursive: true });
 for (const file of ['index.html', 'styles.css', 'app.js', 'robots.txt', 'sitemap.xml']) {
   await cp(path.join(root, file), path.join(out, file));

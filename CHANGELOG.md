@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.5.0 — Edit the recording (local build)
+## 0.5.0 — Edit the recording
 
 - Added a native Edit workspace between Create and Master with detailed stereo waveforms, exact sample/second selections, selection looping, arrangement clips, markers and saved projects.
 - Reversible cut/copy/paste, split, duplicate, ripple delete, trim, reorder and alternate-take import; crossfades, gain/ramp/fade/normalization, silence, reverse, tiny click repair, DC removal, polarity, channel and filter tools.
 - Sample-peak/RMS/DC analysis and an average frequency spectrum. Imported originals are preserved; preview and export share a float PCM render; undo/redo history survives reopening.
 - Selection/whole-song export in all existing delivery formats and direct handoff between Create, Edit and Master.
 - Audio processing uses the same exclusive resource gate and file lock as generation/mastering. No new song generation or model is required.
-- See [editing](docs/AUDIO-EDITING.md) for exact behavior, limits and shortcuts. This build is local; public download links continue to point to the existing published release.
+- See [editing](docs/AUDIO-EDITING.md) for exact behavior, limits and shortcuts. The app and Apple Silicon DMG are Developer ID signed, Apple-notarized and stapled.
 
 ## 0.4.1 — Audio delivery and comparison (local build)
 
